@@ -59,8 +59,11 @@
     "loading": "Duke ngarkuar...",
     "error": "Ndodhi një gabim",
     "success": "Sukses",
-    "language": "Gjuha"
-  },  "products": {
+    "language": "Gjuha",
+    "prev": "Prapa",
+    "next": "Tjetër"
+  },
+  "products": {
     "title": "Produktet",
     "noProducts": "Nuk u gjetën produkte",
     "price": "Çmimi",
@@ -71,6 +74,9 @@
     "outOfStock": "Nuk ka në stok",
     "origin": "Origjina",
     "organicLabel": "Organike",
+    "pageDescription": "Zbuloni produkte të freskëta dhe lokale drejtpërdrejt nga fermerët pranë jush",
+    "oneProductFound": "1 produkt i gjetur",
+    "multipleProductsFound": "produkte të gjetura",
     "addProduct": "Shto Produkt",
     "editProduct": "Ndrysho Produktin",
     "deleteProduct": "Fshi Produktin",
@@ -114,7 +120,8 @@
       "apply": "Apliko",
       "clear": "Pastro"
     }
-  },  "auth": {
+  },
+  "auth": {
     "email": "Email",
     "password": "Fjalëkalimi",
     "confirmPassword": "Konfirmo Fjalëkalimin",
@@ -143,7 +150,8 @@
     "resetPasswordInstructions": "Ju lutemi shkruani emailin tuaj për të marrë udhëzimet për rivendosjen e fjalëkalimit",
     "sendResetLink": "Dërgo lidhjen e rivendosjes",
     "resetPasswordSuccess": "Udhëzimet për rivendosjen e fjalëkalimit janë dërguar në emailin tuaj"
-  },  "languageSelector": {
+  },
+  "languageSelector": {
     "selectLanguage": "Zgjidhni një gjuhë",
     "english": "Anglisht",
     "albanian": "Shqip"
@@ -212,5 +220,35 @@
     "privacySettings": "Cilësimet e Privatësisë",
     "deleteAccount": "Fshi Llogarinë",
     "deleteAccountWarning": "Kjo do të fshijë përgjithmonë të gjitha të dhënat tuaja"
+  },
+  "orders": {
+    "title": "Porositë",
+    "orderNumber": "Numri i Porosisë",
+    "orderDate": "Data e Porosisë",
+    "orderStatus": "Statusi i Porosisë",
+    "orderTotal": "Totali i Porosisë",
+    "orderDetails": "Detajet e Porosisë",
+    "productsList": "Lista e Produkteve",
+    "payment": "Pagesa",
+    "paymentMethod": "Metoda e Pagesës",
+    "paymentStatus": "Statusi i Pagesës",
+    "delivery": "Dorëzimi",
+    "deliveryAddress": "Adresa e Dorëzimit",
+    "deliveryDate": "Data e Dorëzimit",
+    "deliveryMethod": "Metoda e Dorëzimit",
+    "deliveryStatus": "Statusi i Dorëzimit",
+    "trackOrder": "Gjurmo Porosinë",
+    "cancelOrder": "Anulo Porosinë",
+    "confirmOrder": "Konfirmo Porosinë",
+    "status": {
+      "pending": "Në pritje",
+      "processing": "Duke u procesuar",
+      "confirmed": "E konfirmuar",
+      "shipped": "E dërguar",
+      "delivered": "E dorëzuar",
+      "cancelled": "E anuluar",
+      "rejected": "E refuzuar",
+      "completed": "E përfunduar"
+    }
   }
 }

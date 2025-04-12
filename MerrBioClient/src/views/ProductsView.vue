@@ -5,9 +5,14 @@
  */
 import { onMounted, ref, computed } from 'vue';
 import { useProductStore } from '../stores/productStore';
+import { useI18n } from 'vue-i18n';
+import type { FilterOptions } from '../stores/productStore';
 
 import ProductSearch from '../components/products/ProductSearch.vue';
 import ProductList from '../components/products/ProductList.vue';
+
+// Initialize i18n
+const { t } = useI18n();
 
 // Initialize the product store
 const productStore = useProductStore();
@@ -25,7 +30,7 @@ onMounted(async () => {
 });
 
 // Handle filter updates
-const updateFilters = (filters) => {
+const updateFilters = (filters: FilterOptions) => {
   productStore.updateFilters(filters);
 };
 
@@ -36,7 +41,7 @@ const goToPage = (page: number) => productStore.setPage(page);
 
 // Generate array of page numbers for pagination
 const paginationPages = computed(() => {
-  const pages = [];
+  const pages: (number | string)[] = [];
   const maxPagesToShow = 5;
   
   if (totalPages.value <= maxPagesToShow) {
@@ -89,8 +94,8 @@ const paginationPages = computed(() => {
     <div class="container">
       <!-- Page header -->
       <div class="page-header">
-        <h1>Browse Fresh Products</h1>
-        <p>Discover fresh and local products directly from farmers near you</p>
+        <h1>{{ t('products.title') }}</h1>
+        <p>{{ t('products.productDescription') }}</p>
       </div>
       
       <div class="products-content">
@@ -100,15 +105,14 @@ const paginationPages = computed(() => {
         </div>
         
         <!-- Main content area -->
-        <div class="main-content">
-          <!-- Results summary -->
+        <div class="main-content">          <!-- Results summary -->
           <div v-if="!loading" class="results-summary">
             <p>
               <span v-if="filteredProductsCount === 1">
-                1 product found
+                {{ t('products.oneProductFound') }}
               </span>
               <span v-else>
-                {{ filteredProductsCount }} products found
+                {{ filteredProductsCount }} {{ t('products.multipleProductsFound') }}
               </span>
             </p>
           </div>
@@ -117,13 +121,12 @@ const paginationPages = computed(() => {
           <ProductList :products="products" :loading="loading" />
           
           <!-- Pagination -->
-          <div v-if="totalPages > 1 && !loading" class="pagination">
-            <button 
+          <div v-if="totalPages > 1 && !loading" class="pagination">            <button 
               class="pagination-button" 
               @click="prevPage" 
               :disabled="currentPage === 1"
             >
-              &laquo; Prev
+              &laquo; {{ t('common.prev') }}
             </button>
             
             <div class="page-numbers">
@@ -147,7 +150,7 @@ const paginationPages = computed(() => {
               @click="nextPage" 
               :disabled="currentPage === totalPages"
             >
-              Next &raquo;
+              {{ t('common.next') }} &raquo;
             </button>
           </div>
         </div>

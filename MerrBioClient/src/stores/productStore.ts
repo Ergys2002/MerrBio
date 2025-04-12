@@ -18,7 +18,7 @@ export interface Product {
   farmer: Farmer;
 }
 
-interface FilterOptions {
+export interface FilterOptions {
   search: string;
   category: string;
   minPrice: number | null;
