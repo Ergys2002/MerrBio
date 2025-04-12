@@ -46,7 +46,7 @@ public class Product extends BaseEntity {
     private Farmer farmer;
 
     @Column(name = "price", nullable = false)
-    private BigDecimal price;
+    private Double price;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "unit", nullable = false)
