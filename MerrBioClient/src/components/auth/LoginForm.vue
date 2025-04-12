@@ -19,7 +19,6 @@ const authStore = useAuthStore();
 const formData = reactive({
   email: '',
   password: '',
-  role: 'CONSUMER' as 'FARMER' | 'CONSUMER'
 });
 
 // Form validation and UI state
@@ -70,7 +69,8 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
   
   try {
-    await authStore.login(formData.email, formData.password);
+    // Pass credentials as an object
+    await authStore.login({ email: formData.email, password: formData.password });
     
     // Emit success event
     emit('login-success');
@@ -87,7 +87,8 @@ const handleSubmit = async () => {
       router.push('/');
     }
   } catch (error: any) {
-    errors.form = error.message || 'Login failed. Please check your credentials.';
+    // Use error message from store/service if available
+    errors.form = error?.message || 'Login failed. Please check your credentials.';
   } finally {
     isSubmitting.value = false;
   }
@@ -144,28 +145,7 @@ const togglePasswordVisibility = () => {
         <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
       </div>
       
-      <!-- Role selection -->
-      <div class="form-group">
-        <label>I am a:</label>
-        <div class="role-selection">
-          <label class="role-option">
-            <input 
-              type="radio" 
-              v-model="formData.role" 
-              value="CONSUMER" 
-            />
-            <span class="role-label">Consumer</span>
-          </label>
-          <label class="role-option">
-            <input 
-              type="radio" 
-              v-model="formData.role" 
-              value="FARMER" 
-            />
-            <span class="role-label">Farmer</span>
-          </label>
-        </div>
-      </div>
+      <!-- Role selection removed as it's not needed for login -->
       
       <!-- Forgot password link -->
       <div class="forgot-password">

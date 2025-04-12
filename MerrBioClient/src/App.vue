@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import AppHeader from './components/common/AppHeader.vue'
 import AppFooter from './components/common/AppFooter.vue'
+import { onMounted } from 'vue';
+import { useAuthStore } from './stores/authStore';
 </script>
+
+const authStore = useAuthStore();
+
+onMounted(() => {
+  // Check authentication status when the app loads
+  authStore.checkAuth();
+});
+
 
 <template>
   <div class="app">
