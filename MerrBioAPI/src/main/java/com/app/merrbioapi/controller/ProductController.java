@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -53,39 +54,10 @@ public class ProductController {
             @ApiResponse(responseCode = "401", description = "Not authenticated"),
             @ApiResponse(responseCode = "403", description = "Not authorized (requires FARMER role)")
     })
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // Changed path from "/with-images" to base path
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('FARMER')")
     public ResponseEntity<UUID> createProductWithImages(
-            @RequestPart("name") String name,
-            @RequestPart("description") String description,
-            @RequestPart("price") Double price,
-            @RequestPart("unit") String unit,
-            @RequestPart("minAvailableQuantity") Double minAvailableQuantity,
-            @RequestPart("maxAvailableQuantity") Double maxAvailableQuantity,
-            @RequestPart(value = "minimumOrderQuantity", required = false) Double minimumOrderQuantity,
-            @RequestPart(value = "categoryIds", required = false) List<UUID> categoryIds,
-            @RequestPart(value = "isOrganic", required = false) Boolean isOrganic,
-            @RequestPart(value = "thumbnail", required = false)
-            @Parameter(description = "Thumbnail image file", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
-            MultipartFile thumbnail,
-            @RequestPart(value = "images", required = false)
-            @Parameter(description = "Product image files", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
-            List<MultipartFile> images) {
-
-        // Build the request object
-        ProductCreateMultipartRequest request = ProductCreateMultipartRequest.builder()
-                .name(name)
-                .description(description)
-                .price(price)
-                .unit(com.app.merrbioapi.model.enums.Unit.valueOf(unit))
-                .minAvailableQuantity(minAvailableQuantity)
-                .maxAvailableQuantity(maxAvailableQuantity)
-                .minimumOrderQuantity(minimumOrderQuantity)
-                .categoryIds(categoryIds)
-                .isOrganic(isOrganic != null ? isOrganic : false)
-                .thumbnail(thumbnail)
-                .images(images)
-                .build();
+            @ModelAttribute ProductCreateMultipartRequest request) {
 
         UUID productId = productService.createProductWithImages(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(productId);
