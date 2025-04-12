@@ -1,0 +1,169 @@
+/* Organic Patterns and Animation Styles */
+
+/* Leafy Pattern Overlay */
+.leafy-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath fill='none' stroke='%2387c987' stroke-width='1' d='M10,10 C30,20 40,40 20,50 C40,60 30,80 10,90 M90,10 C70,20 60,40 80,50 C60,60 70,80 90,90' /%3E%3C/svg%3E");
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Organic Divider */
+.organic-divider {
+  height: 50px;
+  width: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z' fill='%23ffffff'/%3E%3C/svg%3E");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  margin-top: -50px;
+  z-index: 1;
+  position: relative;
+}
+
+/* Agricultural Background Pattern */
+.agriculture-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath fill='none' stroke='%23e8f5e9' stroke-width='2' d='M25,25 L75,25 L75,75 L25,75 Z' /%3E%3Cpath fill='none' stroke='%23c8e6c9' stroke-width='1' d='M40,40 L60,40 L60,60 L40,60 Z' /%3E%3Ccircle cx='25' cy='25' r='3' fill='%23a5d6a7' /%3E%3Ccircle cx='75' cy='25' r='3' fill='%23a5d6a7' /%3E%3Ccircle cx='75' cy='75' r='3' fill='%23a5d6a7' /%3E%3Ccircle cx='25' cy='75' r='3' fill='%23a5d6a7' /%3E%3C/svg%3E");
+}
+
+/* Staggered Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-item {
+  opacity: 0;
+}
+
+.stagger-item.visible {
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+.stagger-item:nth-child(1).visible { animation-delay: 0.1s; }
+.stagger-item:nth-child(2).visible { animation-delay: 0.3s; }
+.stagger-item:nth-child(3).visible { animation-delay: 0.5s; }
+.stagger-item:nth-child(4).visible { animation-delay: 0.7s; }
+
+/* Hover Animations */
+.hover-grow {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-grow:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--accent-color) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+
+/* Micro-interactions */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.pulse-on-hover:hover {
+  animation: pulse 1s infinite;
+}
+
+/* Modern Button Styles */
+.btn-modern {
+  position: relative;
+  overflow: hidden;
+  transition: color 0.3s ease;
+  z-index: 1;
+}
+
+.btn-modern:before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  z-index: -1;
+}
+
+.btn-modern:hover:before {
+  height: 100%;
+}
+
+/* Badge Styles */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-new {
+  background-color: #4caf50;
+  color: white;
+}
+
+.badge-popular {
+  background-color: #ff9800;
+  color: white;
+}
+
+/* Floating Back to Top Button */
+.back-to-top {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateY(20px);
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.back-to-top.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.back-to-top:hover {
+  transform: translateY(-3px);
+}
+
+/* Parallax scrolling effect */
+.parallax {
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  transition: background-position 0.1s ease-out;
+}
