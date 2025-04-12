@@ -4,6 +4,15 @@ import com.app.merrbioapi.model.dto.request.ProductCreateRequest;
 import com.app.merrbioapi.model.dto.request.ProductUpdateRequest;
 import com.app.merrbioapi.model.dto.response.ProductResponse;
 import com.app.merrbioapi.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,10 +33,19 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/products")
 @RequiredArgsConstructor
+@Tag(name = "Products", description = "Product management APIs")
+@SecurityRequirement(name = "Bearer Authentication")
 public class ProductController {
 
     private final ProductService productService;
 
+    @Operation(summary = "Create a new product", description = "Create a new product with the provided details (Farmer role required)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Product created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input data"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Not authorized (requires FARMER role)")
+    })
     @PostMapping
     @PreAuthorize("hasAuthority('FARMER')")
     public ResponseEntity<UUID> createProduct(@RequestBody ProductCreateRequest request) {
@@ -35,48 +53,92 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(productId);
     }
 
+    @Operation(summary = "Get product by ID", description = "Retrieve a product by its unique identifier")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Product found", 
+                    content = @Content(schema = @Schema(implementation = ProductResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Product not found")
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable("id") UUID productId) {
+    public ResponseEntity<ProductResponse> getProductById(
+            @Parameter(description = "Product ID", required = true) @PathVariable("id") UUID productId) {
         ProductResponse product = productService.getProductById(productId);
         return ResponseEntity.ok(product);
     }
 
+    @Operation(summary = "Get all products", description = "Retrieve a list of all available products")
+    @ApiResponse(responseCode = "200", description = "List of products retrieved successfully",
+                content = @Content(array = @ArraySchema(schema = @Schema(implementation = ProductResponse.class))))
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
         List<ProductResponse> products = productService.getAllProducts();
         return ResponseEntity.ok(products);
     }
 
+    @Operation(summary = "Get products by farmer", description = "Retrieve all products from a specific farmer")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "List of products retrieved successfully",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = ProductResponse.class)))),
+        @ApiResponse(responseCode = "404", description = "Farmer not found")
+    })
     @GetMapping("/farmer/{farmerId}")
-    public ResponseEntity<List<ProductResponse>> getProductsByFarmer(@PathVariable UUID farmerId) {
+    public ResponseEntity<List<ProductResponse>> getProductsByFarmer(
+            @Parameter(description = "Farmer ID", required = true) @PathVariable UUID farmerId) {
         List<ProductResponse> products = productService.getProductsByFarmer(farmerId);
         return ResponseEntity.ok(products);
     }
 
+    @Operation(summary = "Get products by category", description = "Retrieve all products in a specific category")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "List of products retrieved successfully",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = ProductResponse.class)))),
+        @ApiResponse(responseCode = "404", description = "Category not found")
+    })
     @GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<ProductResponse>> getProductsByCategory(@PathVariable UUID categoryId) {
+    public ResponseEntity<List<ProductResponse>> getProductsByCategory(
+            @Parameter(description = "Category ID", required = true) @PathVariable UUID categoryId) {
         List<ProductResponse> products = productService.getProductsByCategory(categoryId);
         return ResponseEntity.ok(products);
     }
 
+    @Operation(summary = "Search products", description = "Search products by keyword in name or description")
+    @ApiResponse(responseCode = "200", description = "Search results",
+                content = @Content(array = @ArraySchema(schema = @Schema(implementation = ProductResponse.class))))
     @GetMapping("/search")
-    public ResponseEntity<List<ProductResponse>> searchProducts(@RequestParam String keyword) {
+    public ResponseEntity<List<ProductResponse>> searchProducts(
+            @Parameter(description = "Search keyword", required = true) @RequestParam String keyword) {
         List<ProductResponse> products = productService.searchProducts(keyword);
         return ResponseEntity.ok(products);
     }
 
+    @Operation(summary = "Update product", description = "Update an existing product (Farmer role required)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Product updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input data"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Not authorized or not product owner"),
+        @ApiResponse(responseCode = "404", description = "Product not found")
+    })
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('FARMER')")
     public ResponseEntity<Void> updateProduct(
-            @PathVariable("id") UUID productId,
+            @Parameter(description = "Product ID", required = true) @PathVariable("id") UUID productId,
             @RequestBody ProductUpdateRequest request) {
         productService.updateProduct(productId, request);
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Delete product", description = "Delete an existing product (Farmer role required)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Product deleted successfully"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Not authorized or not product owner"),
+        @ApiResponse(responseCode = "404", description = "Product not found")
+    })
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('FARMER')")
-    public ResponseEntity<Void> deleteProduct(@PathVariable("id") UUID productId) {
+    public ResponseEntity<Void> deleteProduct(
+            @Parameter(description = "Product ID", required = true) @PathVariable("id") UUID productId) {
         productService.deleteProduct(productId);
         return ResponseEntity.ok().build();
     }

@@ -19,6 +19,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -26,6 +28,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final ObjectMapper objectMapper;
+    
+    // Updated paths that don't need authentication
+    private static final List<String> PUBLIC_PATHS = Arrays.asList(
+            "/auth/refresh-token",
+            "/auth/login",
+            "/auth/register",
+            // API docs paths
+            "/v3/api-docs",
+            "/api-docs",
+            // Swagger UI paths
+            "/swagger-ui",
+            "/swagger-ui.html",
+            "/swagger-resources",
+            "/webjars",
+            "/configuration"
+    );
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
@@ -42,9 +60,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        if (request.getServletPath().contains("/auth/refresh-token") ||
-                request.getServletPath().contains("/auth/login") ||
-                request.getServletPath().contains("/user/sign-up")) {
+        // Skip filter for public paths and Swagger UI
+        final String path = request.getServletPath();
+        if (isPublicPath(path)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -101,5 +119,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             objectMapper.writeValue(response.getOutputStream(), errorResponse);
         }
+    }
+    
+    private boolean isPublicPath(String path) {
+        // First check for paths containing key words
+        if (path.contains("swagger") || 
+            path.contains("api-docs") || 
+            path.contains("webjars") ||
+            path.contains("configuration") || 
+            path.contains("v3/api")) {
+            return true;
+        }
+        
+        // Handle nested paths with and without /api/v1/ prefix
+        String checkPath;
+        if (path.startsWith("/api/v1/")) {
+            checkPath = path.substring("/api/v1".length());
+        } else {
+            checkPath = path;
+        }
+
+        // Check if the path (with or without prefix) starts with any public path
+        return PUBLIC_PATHS.stream().anyMatch(publicPath -> 
+            checkPath.equals(publicPath) || 
+            checkPath.startsWith(publicPath + "/"));
     }
 }
