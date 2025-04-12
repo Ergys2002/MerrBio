@@ -370,7 +370,6 @@ onUnmounted(() => {
           <img src="https://img.icons8.com/color/96/null/natural-food.png" alt="Organic Certification" />
           <img src="https://img.icons8.com/color/96/null/certificate.png" alt="Quality Certified" />
           <img src="https://img.icons8.com/color/96/null/guarantee.png" alt="Satisfaction Guaranteed" />
-          <img src="https://img.icons8.com/color/96/null/protect.png" alt="Secure Transactions" />
         </div>
       </div>
     </section>

@@ -4,8 +4,11 @@
  * @component
  */
 import { ref, reactive } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/authStore';
+
+const { t } = useI18n();
 
 interface Emits {
   (e: 'login-success'): void;
@@ -41,19 +44,18 @@ const validateForm = (): boolean => {
   errors.email = '';
   errors.password = '';
   errors.form = '';
-  
-  // Email validation
+    // Email validation
   if (!formData.email) {
-    errors.email = 'Email is required';
+    errors.email = t('auth.errors.emailRequired');
     isValid = false;
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-    errors.email = 'Please enter a valid email address';
+    errors.email = t('auth.errors.emailInvalid');
     isValid = false;
   }
   
   // Password validation
   if (!formData.password) {
-    errors.password = 'Password is required';
+    errors.password = t('auth.errors.passwordRequired');
     isValid = false;
   }
   
@@ -110,28 +112,24 @@ const togglePasswordVisibility = () => {
         {{ errors.form }}
       </div>
       
-      <!-- Email field -->
-      <div class="form-group">
-        <label for="login-email">Email</label>
+      <!-- Email field -->      <div class="form-group">        <label for="login-email">{{ t('common.email') }}</label>
         <input
           id="login-email"
           v-model="formData.email"
           type="email"
-          placeholder="Your email address"
+          :placeholder="t('common.email')"
           :class="{ 'has-error': errors.email }"
         />
         <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
       </div>
       
-      <!-- Password field -->
-      <div class="form-group">
-        <label for="login-password">Password</label>
+      <!-- Password field -->      <div class="form-group">        <label for="login-password">{{ t('common.password') }}</label>
         <div class="password-input-container">
           <input
             id="login-password"
             v-model="formData.password"
             :type="showPassword ? 'text' : 'password'"
-            placeholder="Your password"
+            :placeholder="t('common.password')"
             :class="{ 'has-error': errors.password }"
           />
           <button 
@@ -139,7 +137,7 @@ const togglePasswordVisibility = () => {
             class="password-toggle"
             @click="togglePasswordVisibility"
           >
-            {{ showPassword ? 'Hide' : 'Show' }}
+            {{ showPassword ? t('common.hide') : t('common.show') }}
           </button>
         </div>
         <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
@@ -147,9 +145,8 @@ const togglePasswordVisibility = () => {
       
       <!-- Role selection removed as it's not needed for login -->
       
-      <!-- Forgot password link -->
-      <div class="forgot-password">
-        <a href="#">Forgot password?</a>
+      <!-- Forgot password link -->      <div class="forgot-password">
+        <a href="#">{{ t('auth.forgotPassword') }}</a>
       </div>
       
       <!-- Submit button -->
@@ -159,8 +156,8 @@ const togglePasswordVisibility = () => {
           class="submit-button"
           :disabled="isSubmitting"
         >
-          <span v-if="isSubmitting">Logging in...</span>
-          <span v-else>Login</span>
+          <span v-if="isSubmitting">{{ t('auth.loggingIn') }}</span>
+          <span v-else>{{ t('auth.login') }}</span>
         </button>
       </div>
     </form>

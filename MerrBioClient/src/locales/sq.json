@@ -96,6 +96,8 @@
     }
   },
   "common": {
+    "email": "Email",
+    "password": "Password",
     "search": "Kërko",
     "filter": "Filtro",
     "sort": "Rendit",
@@ -107,9 +109,8 @@
     "loading": "Duke ngarkuar...",
     "error": "Ndodhi një gabim",
     "success": "Sukses",
-    "language": "Gjuha",
-    "prev": "Prapa",
-    "next": "Tjetër"
+    "show": "Shfaq",
+    "hide": "Fshih"
   },
   "products": {
     "title": "Produktet",
@@ -179,34 +180,15 @@
     "viewAllButton": "Shiko të Gjitha"
   },
   "auth": {
-    "email": "Email",
-    "password": "Fjalëkalimi",
-    "confirmPassword": "Konfirmo Fjalëkalimin",
-    "forgotPassword": "Harruat fjalëkalimin?",
+    "welcome": "Mirë se vini në MerrBio",
+    "joinCommunity": "Bëhuni pjesë e komunitetit tonë të fermerëve dhe konsumatorëve për produkte të freskëta vendase",
     "login": "Hyrje",
     "register": "Regjistrohu",
-    "accountType": "Lloji i llogarisë",
-    "farmer": "Fermer",
-    "consumer": "Konsumator",
-    "name": "Emri",
+    "forgotPassword": "Keni harruar fjalëkalimin?",
+    "newToMerrBio": "Je i ri në MerrBio? Krijo një llogari",
+    "firstName": "Emri",
     "lastName": "Mbiemri",
-    "phoneNumber": "Numri i telefonit",
-    "address": "Adresa",
-    "city": "Qyteti",
-    "postalCode": "Kodi postar",
-    "country": "Shteti",
-    "bio": "Biografia",
-    "profilePicture": "Fotografia e profilit",
-    "termsAndConditions": "Kushtet dhe Afatet",
-    "privacyPolicy": "Politika e Privatësisë",
-    "agreeToTerms": "Unë pajtohem me Kushtet dhe Afatet",
-    "alreadyHaveAccount": "Keni tashmë një llogari?",
-    "dontHaveAccount": "Nuk keni llogari ende?",
-    "createAccount": "Krijoni një llogari",
-    "resetPassword": "Rivendos fjalëkalimin",
-    "resetPasswordInstructions": "Ju lutemi shkruani emailin tuaj për të marrë udhëzimet për rivendosjen e fjalëkalimit",
-    "sendResetLink": "Dërgo lidhjen e rivendosjes",
-    "resetPasswordSuccess": "Udhëzimet për rivendosjen e fjalëkalimit janë dërguar në emailin tuaj"
+    "haveAccount": "Keni tashmë një llogari? Hyni këtu"
   },
   "languageSelector": {
     "selectLanguage": "Zgjidhni një gjuhë",

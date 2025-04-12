@@ -4,8 +4,11 @@
  * @component
  */
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import LoginForm from '../components/auth/LoginForm.vue';
 import RegisterForm from '../components/auth/RegisterForm.vue';
+
+const { t } = useI18n();
 
 // Tab state management
 const activeTab = ref<'login' | 'register'>('login');
@@ -35,9 +38,8 @@ const handleRegisterSuccess = () => {
   <div class="auth-view">
     <div class="container">
       <div class="auth-container">
-        <div class="auth-header">
-          <h1>Welcome to MerrBio</h1>
-          <p>Join our community of farmers and consumers for fresh, local products</p>
+        <div class="auth-header">          <h1>{{ t('auth.welcome') }}</h1>
+          <p>{{ t('auth.joinCommunity') }}</p>
         </div>
         
         <div class="auth-tabs">
@@ -45,15 +47,14 @@ const handleRegisterSuccess = () => {
             class="tab-item"
             :class="{ active: activeTab === 'login' }"
             @click="showLoginTab"
-          >
-            Login
+          >            {{ t('auth.login') }}
           </div>
           <div
             class="tab-item"
             :class="{ active: activeTab === 'register' }"
             @click="showRegisterTab"
           >
-            Register
+            {{ t('auth.register') }}
           </div>
           <div class="tab-slider" :class="activeTab"></div>
         </div>
@@ -70,11 +71,10 @@ const handleRegisterSuccess = () => {
         </div>
         
         <div class="auth-footer">
-          <div v-if="activeTab === 'login'">
-            <p>New to MerrBio? <a href="#" @click.prevent="showRegisterTab">Create an account</a></p>
+          <div v-if="activeTab === 'login'">            <p>{{ t('auth.newToMerrBio') }} <a href="#" @click.prevent="showRegisterTab">{{ t('auth.register') }}</a></p>
           </div>
           <div v-else>
-            <p>Already have an account? <a href="#" @click.prevent="showLoginTab">Login here</a></p>
+            <p>{{ t('auth.haveAccount') }} <a href="#" @click.prevent="showLoginTab">{{ t('auth.login') }}</a></p>
           </div>
         </div>
       </div>

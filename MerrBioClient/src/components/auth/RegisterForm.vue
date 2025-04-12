@@ -4,8 +4,11 @@
  * @component
  */
 import { ref, reactive } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/authStore';
+
+const { t } = useI18n();
 
 interface Emits {
   (e: 'register-success'): void;
@@ -65,49 +68,48 @@ const validateForm = (): boolean => {
   errors.role = '';
   errors.acceptTerms = '';
   errors.form = '';
-
   // First Name validation
   if (!formData.firstName.trim()) {
-    errors.firstName = 'First name is required';
+    errors.firstName = t('auth.errors.firstNameRequired');
     isValid = false;
   }
 
   // Last Name validation
   if (!formData.lastName.trim()) {
-    errors.lastName = 'Last name is required';
+    errors.lastName = t('auth.errors.lastNameRequired');
     isValid = false;
   }
   
   // Email validation
   if (!formData.email) {
-    errors.email = 'Email is required';
+    errors.email = t('auth.errors.emailRequired');
     isValid = false;
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-    errors.email = 'Please enter a valid email address';
+    errors.email = t('auth.errors.emailInvalid');
     isValid = false;
   }
   
   // Password validation
   if (!formData.password) {
-    errors.password = 'Password is required';
+    errors.password = t('auth.errors.passwordRequired');
     isValid = false;
   } else if (formData.password.length < 8) {
-    errors.password = 'Password must be at least 8 characters long';
+    errors.password = t('auth.errors.passwordLength');
     isValid = false;
   }
   
   // Confirm password validation
   if (!formData.confirmPassword) {
-    errors.confirmPassword = 'Please confirm your password';
+    errors.confirmPassword = t('auth.errors.confirmPasswordRequired');
     isValid = false;
   } else if (formData.password !== formData.confirmPassword) {
-    errors.confirmPassword = 'Passwords do not match';
+    errors.confirmPassword = t('auth.errors.passwordsNotMatch');
     isValid = false;
   }
   
   // Terms acceptance validation
   if (!formData.acceptTerms) {
-    errors.acceptTerms = 'You must accept the terms and conditions';
+    errors.acceptTerms = t('auth.errors.termsRequired');
     isValid = false;
   }
   
@@ -174,13 +176,12 @@ const togglePasswordVisibility = () => {
       </div>
       
       <!-- First Name field -->
-      <div class="form-group">
-        <label for="register-firstName">First Name</label>
+      <div class="form-group">        <label for="register-firstName">{{ t('auth.firstName') }}</label>
         <input
           id="register-firstName"
           v-model="formData.firstName"
           type="text"
-          placeholder="Your first name"
+          :placeholder="t('auth.placeholders.firstName')"
           :class="{ 'has-error': errors.firstName }"
         />
         <span v-if="errors.firstName" class="error-message">{{ errors.firstName }}</span>
