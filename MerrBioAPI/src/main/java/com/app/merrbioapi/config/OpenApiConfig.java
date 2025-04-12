@@ -8,7 +8,6 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springdoc.core.models.GroupedOpenApi;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,9 +15,6 @@ import org.springframework.context.annotation.Configuration;
 public class OpenApiConfig {
 
     private static final String SECURITY_SCHEME_NAME = "Bearer Authentication";
-
-    @Value("${server.servlet.context-path:}")
-    private String contextPath;
 
     @Bean
     public OpenAPI openAPI() {
@@ -45,9 +41,19 @@ public class OpenApiConfig {
 
     @Bean
     public GroupedOpenApi publicApi() {
+
+        String[] pathsToInclude = {
+                "/auth/**",       // Context path + /auth/**
+                "/products/**",   // Context path + /products/**
+                "/categories/**", // Context path + /categories/**
+                "/farmers/**",    // Context path + /farmers/**
+                "/users/**"
+        };
+
         return GroupedOpenApi.builder()
-                .group("merrbio-public")
-                .pathsToMatch("/auth/**", "/products/**", "/categories/**")
+                .group("merrbio-api")
+                .pathsToMatch(pathsToInclude)
                 .build();
     }
+
 }

@@ -30,4 +30,7 @@ public interface FarmerRepository extends JpaRepository<Farmer, UUID> {
     boolean existsByUserId(UUID userId);
 
     long countByIsVerified(Boolean isVerified);
+
+    List<Farmer> findByFarmNameContainingIgnoreCase(String farmName);
+
 }

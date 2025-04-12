@@ -192,7 +192,6 @@ public class ProductController {
             @Parameter(description = "Optional search keyword") @RequestParam(required = false) String query,
             @RequestBody(required = false) ProductSearchRequest searchRequest) {
 
-        // Initialize with default values if request is null
         if (searchRequest == null) {
             searchRequest = new ProductSearchRequest();
         }
