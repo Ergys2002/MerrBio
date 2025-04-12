@@ -1,6 +1,8 @@
 package com.app.merrbioapi.controller;
 
 import com.app.merrbioapi.model.dto.request.AuthenticationRequest;
+import com.app.merrbioapi.model.dto.request.CustomerRegisterRequest;
+import com.app.merrbioapi.model.dto.request.FarmerRegisterRequest;
 import com.app.merrbioapi.model.dto.request.RegisterRequest;
 import com.app.merrbioapi.model.dto.request.TokenRefreshRequest;
 import com.app.merrbioapi.model.dto.response.AuthenticationResponse;
@@ -47,16 +49,28 @@ public class AuthController {
         return ResponseEntity.ok(authService.authenticate(request));
     }
 
-    @Operation(summary = "Register new user", description = "Create new user account and return JWT tokens")
+    @Operation(summary = "Register new customer", description = "Create new customer account and return JWT tokens")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Successful registration", 
-                     content = @Content(schema = @Schema(implementation = RegisterResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid input data"),
-        @ApiResponse(responseCode = "409", description = "Email or phone number already exists")
+            @ApiResponse(responseCode = "200", description = "Successful customer registration",
+                    content = @Content(schema = @Schema(implementation = AuthenticationResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "409", description = "Email or phone number already exists")
     })
-    @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+    @PostMapping("/register/customer")
+    public ResponseEntity<AuthenticationResponse> registerCustomer(@Valid @RequestBody CustomerRegisterRequest request) {
+        return ResponseEntity.ok(authService.registerCustomer(request));
+    }
+
+    @Operation(summary = "Register new farmer", description = "Create new farmer account and return JWT tokens")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Successful farmer registration",
+                    content = @Content(schema = @Schema(implementation = AuthenticationResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "409", description = "Email or phone number already exists")
+    })
+    @PostMapping("/register/farmer")
+    public ResponseEntity<AuthenticationResponse> registerFarmer(@Valid @RequestBody FarmerRegisterRequest request) {
+        return ResponseEntity.ok(authService.registerFarmer(request));
     }
 
     @Operation(summary = "Refresh token", description = "Get new access token using refresh token")

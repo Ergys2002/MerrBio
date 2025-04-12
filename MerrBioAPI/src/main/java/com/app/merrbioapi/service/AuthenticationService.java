@@ -8,19 +8,25 @@ import com.app.merrbioapi.exception.PhoneNumberAlreadyExistsException;
 import com.app.merrbioapi.exception.SessionNotFoundException;
 import com.app.merrbioapi.exception.TokenRefreshException;
 import com.app.merrbioapi.model.dto.request.AuthenticationRequest;
+import com.app.merrbioapi.model.dto.request.BaseRegisterRequest;
+import com.app.merrbioapi.model.dto.request.CustomerRegisterRequest;
+import com.app.merrbioapi.model.dto.request.FarmerRegisterRequest;
 import com.app.merrbioapi.model.dto.request.RegisterRequest;
 import com.app.merrbioapi.model.dto.request.TokenRefreshRequest;
 import com.app.merrbioapi.model.dto.response.AuthenticationResponse;
 import com.app.merrbioapi.model.dto.response.DeviceSessionDto;
 import com.app.merrbioapi.model.dto.response.RegisterResponse;
 import com.app.merrbioapi.model.dto.response.TokenRefreshResponse;
+import com.app.merrbioapi.model.entity.Farmer;
 import com.app.merrbioapi.model.entity.RefreshToken;
 import com.app.merrbioapi.model.entity.User;
 import com.app.merrbioapi.model.entity.UserInfo;
 import com.app.merrbioapi.model.enums.Role;
+import com.app.merrbioapi.repository.FarmerRepository;
 import com.app.merrbioapi.repository.RefreshTokenRepository;
 import com.app.merrbioapi.repository.UserInfoRepository;
 import com.app.merrbioapi.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -38,6 +44,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class AuthenticationService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
@@ -46,24 +53,7 @@ public class AuthenticationService {
     private final UserInfoRepository userInfoRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
-
-    public AuthenticationService(
-            UserRepository userRepository,
-            JwtService jwtService,
-            AuthenticationManager authenticationManager,
-            RefreshTokenService refreshTokenService,
-            UserInfoRepository userInfoRepository,
-            PasswordEncoder passwordEncoder,
-            RefreshTokenRepository refreshTokenRepository
-    ) {
-        this.userRepository = userRepository;
-        this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager;
-        this.refreshTokenService = refreshTokenService;
-        this.userInfoRepository = userInfoRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.refreshTokenRepository = refreshTokenRepository;
-    }
+    private final FarmerRepository farmerRepository;
 
     @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
@@ -79,29 +69,83 @@ public class AuthenticationService {
     }
 
     @Transactional
-    public RegisterResponse register(RegisterRequest request) {
+    public AuthenticationResponse registerCustomer(CustomerRegisterRequest request) {
+        // 1. Validate uniqueness
+        checkEmailAndPhoneNumber(request.getEmail(), request.getPhoneNumber());
 
-        checkEmailAndPhoneNumber(request);
+        // 2. Create User and UserInfo
+        User savedUser = createUserAndInfo(request, Role.CUSTOMER);
 
-        User user = buildUser(request);
+        // 3. Generate tokens (registration implies login)
+        String accessToken = jwtService.generateAccessToken(savedUser);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser.getEmail());
 
-        User savedUser = userRepository.save(user);
-
-        UserInfo userInfo = buildUserInfo(request, savedUser);
-
-        userInfoRepository.save(userInfo);
-
-        UserDetails userDetails = authenticateAndGetUserDetails(request.getEmail(), request.getPassword());
-
-        String accessToken = jwtService.generateAccessToken(userDetails);
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername());
-
-        return RegisterResponse.builder()
+        return AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken.getToken())
                 .build();
-
     }
+
+    private User createUserAndInfo(BaseRegisterRequest request, Role role) {
+        // Build User
+        User user = User.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(role)
+                // Initial empty list for tokens, etc.
+                .build();
+        // User needs to be saved first to get an ID for UserInfo association
+        User savedUser = userRepository.save(user);
+
+        // Build UserInfo
+        UserInfo userInfo = UserInfo.builder()
+                .user(savedUser) // Link to the saved user
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .phoneNumber(request.getPhoneNumber())
+                .birthDate(request.getBirthDate())
+                .gender(request.getGender())
+                .build();
+        userInfoRepository.save(userInfo);
+
+        // Optional: Link UserInfo back to User if needed for immediate access,
+        // though FetchType.LAZY is often preferred.
+        // savedUser.setUserInfo(userInfo); // Be careful with bidirectional mapping management
+
+        return savedUser;
+    }
+
+
+    @Transactional
+    public AuthenticationResponse registerFarmer(FarmerRegisterRequest request) {
+        // 1. Validate uniqueness
+        checkEmailAndPhoneNumber(request.getEmail(), request.getPhoneNumber());
+        // Optionally check farm name uniqueness if required
+        // checkFarmNameExists(request.getFarmName());
+
+        // 2. Create User and UserInfo
+        User savedUser = createUserAndInfo(request, Role.FARMER);
+
+        // 3. Create Farmer entity
+        Farmer farmer = Farmer.builder()
+                .user(savedUser)
+                .farmName(request.getFarmName())
+                .farmLocation(request.getFarmLocation())
+                .bio(request.getBio())
+                .isVerified(false) // Default verification status
+                .build();
+        farmerRepository.save(farmer);
+
+        // 4. Generate tokens (registration implies login)
+        String accessToken = jwtService.generateAccessToken(savedUser);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser.getEmail());
+
+        return AuthenticationResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken.getToken())
+                .build();
+    }
+
 
     @Transactional
     public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
@@ -210,6 +254,15 @@ public class AuthenticationService {
     private void checkEmailExists(String email) {
         if (userRepository.existsByEmail(email)) {
             throw new EmailAlreadyExistsException(email);
+        }
+    }
+
+    private void checkEmailAndPhoneNumber(String email, String phoneNumber) {
+        if (userRepository.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException(email);
+        }
+        if (userInfoRepository.existsByPhoneNumber(phoneNumber)) {
+            throw new PhoneNumberAlreadyExistsException(phoneNumber);
         }
     }
 

@@ -17,6 +17,8 @@ public interface FarmerRepository extends JpaRepository<Farmer, UUID> {
 
     List<Farmer> findByIsVerified(Boolean isVerified);
 
+    boolean existsByFarmName(String farmName);
+
     @Query("SELECT f FROM Farmer f JOIN f.user u JOIN u.userInfo ui WHERE " +
             "LOWER(f.farmName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(f.farmLocation) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

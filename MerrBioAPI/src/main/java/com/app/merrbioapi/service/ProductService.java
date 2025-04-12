@@ -1,23 +1,32 @@
 package com.app.merrbioapi.service;
 
+import com.app.merrbioapi.model.dto.request.ProductCreateMultipartRequest;
 import com.app.merrbioapi.model.dto.request.ProductCreateRequest;
+import com.app.merrbioapi.model.dto.request.ProductSearchRequest;
 import com.app.merrbioapi.model.dto.request.ProductUpdateRequest;
 import com.app.merrbioapi.model.dto.response.CategoryResponse;
 import com.app.merrbioapi.model.dto.response.ProductResponse;
 import com.app.merrbioapi.model.entity.Category;
 import com.app.merrbioapi.model.entity.Farmer;
+import com.app.merrbioapi.model.entity.Image;
 import com.app.merrbioapi.model.entity.Product;
 import com.app.merrbioapi.model.entity.ProductCategory;
 import com.app.merrbioapi.model.entity.User;
 import com.app.merrbioapi.repository.CategoryRepository;
 import com.app.merrbioapi.repository.FarmerRepository;
+import com.app.merrbioapi.repository.ImageRepository;
 import com.app.merrbioapi.repository.ProductCategoryRepository;
 import com.app.merrbioapi.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,13 +40,23 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductCategoryRepository productCategoryRepository;
     private final FarmerRepository farmerRepository;
+    private final ImageRepository imageRepository;
+    private final FileService fileService;
 
     @Transactional
-    public UUID createProduct(ProductCreateRequest request) {
+    public UUID createProductWithImages(ProductCreateMultipartRequest request) {
+        // Get current user (farmer)
         User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Farmer farmer = farmerRepository.findByUserId(currentUser.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Farmer not found for current user"));
 
+        // Store thumbnail if provided
+        String thumbnailUrl = null;
+        if (request.getThumbnail() != null && !request.getThumbnail().isEmpty()) {
+            thumbnailUrl = fileService.storeFile(request.getThumbnail());
+        }
+
+        // Create the product
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -49,12 +68,15 @@ public class ProductService {
                 .minimumOrderQuantity(request.getMinimumOrderQuantity())
                 .isOrganic(request.getIsOrganic())
                 .isInStock(true)
-                .thumbnailUrl(request.getThumbnailUrl())
+                .thumbnailUrl(thumbnailUrl)
                 .category(new ArrayList<>())
+                .imageUrls(new ArrayList<>())
                 .build();
 
+        // Save the product first to get an ID
         Product savedProduct = productRepository.save(product);
 
+        // Add categories if provided
         if (request.getCategoryIds() != null && !request.getCategoryIds().isEmpty()) {
             List<Category> categories = categoryRepository.findAllById(request.getCategoryIds());
             for (Category category : categories) {
@@ -65,6 +87,26 @@ public class ProductService {
                 productCategoryRepository.save(productCategory);
             }
         }
+
+        // Process and save product images if provided
+        if (request.getImages() != null && !request.getImages().isEmpty()) {
+            for (MultipartFile imageFile : request.getImages()) {
+                if (imageFile != null && !imageFile.isEmpty()) {
+                    String imageUrl = fileService.storeFile(imageFile);
+                    if (imageUrl != null) {
+                        Image image = Image.builder()
+                                .imageUrl(imageUrl)
+                                .product(savedProduct)
+                                .build();
+                        // Link the image back to the product (important for retrieval in mapToProductResponse)
+                        savedProduct.getImageUrls().add(image); // Add the saved image entity
+                        imageRepository.save(image);
+                    }
+                }
+            }
+
+        }
+
 
         return savedProduct.getId();
     }
@@ -183,9 +225,22 @@ public class ProductService {
             throw new SecurityException("You do not have permission to delete this product");
         }
 
+        // Consider deleting associated files (thumbnail, images) from storage
+        if(product.getThumbnailUrl() != null) {
+            // fileService.deleteFile(product.getThumbnailUrl()); // Assuming FileService has a delete method
+        }
+        if(product.getImageUrls() != null) {
+            product.getImageUrls().forEach(image -> {
+                // fileService.deleteFile(image.getImageUrl());
+            });
+        }
+        // Deleting the product should cascade delete ProductCategory and Image entities if configured correctly.
+        // If not, delete them manually first:
+        // imageRepository.deleteByProductId(productId);
+        // productCategoryRepository.deleteByProductId(productId);
+
         productRepository.delete(product);
     }
-
     @Transactional(readOnly = true)
     public List<ProductResponse> searchProducts(String keyword) {
         return productRepository.searchProducts(keyword).stream()
@@ -228,4 +283,69 @@ public class ProductService {
                 .updatedAt(product.getUpdatedAt())
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> advancedSearch(String query, ProductSearchRequest request) {
+        int page = request.getPage() != null ? request.getPage() : 0;
+        int size = request.getSize() != null ? request.getSize() : 10;
+
+        Sort sort = createSort(request);
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Boolean showOutOfStock = request.getShowOutOfStock() != null ? request.getShowOutOfStock() : false;
+
+        Page<Product> productsPage;
+
+        if (request.getCategoryIds() != null && !request.getCategoryIds().isEmpty()) {
+            productsPage = productRepository.advancedSearchMultipleCategories(
+                    query,
+                    request.getFarmerId(),
+                    request.getCategoryIds(),
+                    request.getIsOrganic(),
+                    showOutOfStock,
+                    request.getMinPrice(),
+                    request.getMaxPrice(),
+                    pageable
+            );
+        } else {
+            UUID categoryId = null;
+            if (request.getCategoryIds() != null && !request.getCategoryIds().isEmpty()) {
+                categoryId = request.getCategoryIds().get(0);
+            }
+
+            productsPage = productRepository.advancedSearch(
+                    query,
+                    request.getFarmerId(),
+                    categoryId,
+                    request.getIsOrganic(),
+                    showOutOfStock,
+                    request.getMinPrice(),
+                    request.getMaxPrice(),
+                    pageable
+            );
+        }
+
+        return productsPage.map(this::mapToProductResponse);
+    }
+
+    private Sort createSort(ProductSearchRequest request) {
+        String sortBy = request.getSortBy() != null ? request.getSortBy() : "createdAt";
+
+        try {
+            Product.class.getDeclaredField(sortBy);
+        } catch (NoSuchFieldException e) {
+            sortBy = "createdAt";
+        }
+
+        Sort.Direction direction = Sort.Direction.DESC;
+        if (request.getSortDirection() != null &&
+                request.getSortDirection().equalsIgnoreCase("asc")) {
+            direction = Sort.Direction.ASC;
+        }
+
+        return Sort.by(direction, sortBy);
+    }
+
+
 }

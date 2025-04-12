@@ -29,6 +29,8 @@ public class SecurityConfig {
             "/auth/login", 
             "/auth/register", 
             "/auth/refresh-token",
+            "/auth/register/customer",
+            "/auth/register/farmer",
             // Swagger UI and OpenAPI paths
             "/v3/api-docs/**",
             "/api/v1/v3/api-docs/**",
