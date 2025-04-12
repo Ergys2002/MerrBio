@@ -122,7 +122,9 @@
       "meat": "Meat",
       "honey": "Honey",
       "other": "Other"
-    }
+    },
+    "description": "Description",
+    "multipleResults": "products found"
   },
   "auth": {
     "welcome": "Welcome to MerrBio",
@@ -133,7 +135,28 @@
     "newToMerrBio": "New to MerrBio? Create an account",
     "firstName": "First Name",
     "lastName": "Last Name",
-    "haveAccount": "Already have an account? Login here"
+    "haveAccount": "Already have an account? Login here",
+    "confirmPassword": "Confirm Password",
+    "birthDate": "Birth Date",
+    "phoneNumber": "Phone Number",
+    "gender": "Gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "iAmA": "I am a",
+    "roleConsumer": "Consumer",
+    "roleFarmer": "Farmer",
+    "accept": "Accept",
+    "terms": "Terms and Conditions",
+    "createAccount": "Create Account",
+    "placeholders": {
+      "passwordConfirm": "Confirm your password",
+      "phoneNumber": "Enter your phone number",
+      "firstName": "Enter your first name",
+      "lastName": "Enter your last name",
+      "farmName": "Enter your farm name",
+      "farmLocation": "Enter your farm location",
+      "bio": "Enter a short description (optional)"
+    }
   },
   "languageSelector": {
     "selectLanguage": "Select a language",
