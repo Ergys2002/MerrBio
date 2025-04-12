@@ -1,0 +1,89 @@
+{
+  "app": {
+    "name": "MerrBio",
+    "tagline": "Fresh from farm to table"
+  },
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "farmers": "Farmers",
+    "about": "About",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "home": {
+    "hero": {
+      "title": "Fresh from Farm to Your Table",
+      "description": "MerrBio connects you directly with local farmers for the freshest organic produce and products.",
+      "browseButton": "Browse Products",
+      "listButton": "List Your Products",
+      "imageAlt": "Farm fresh produce"
+    },
+    "featuredProducts": {
+      "tomatoes": {
+        "name": "Fresh Organic Tomatoes",
+        "description": "Locally grown organic tomatoes, perfect for salads and cooking.",
+        "farmer": "Green Valley Farm"
+      },
+      "eggs": {
+        "name": "Free Range Eggs",
+        "description": "Farm fresh free-range eggs from happy chickens.",
+        "farmer": "Happy Hen Farm"
+      },
+      "lettuce": {
+        "name": "Organic Lettuce",
+        "description": "Crisp and fresh organic lettuce harvested daily.",
+        "farmer": "Sunshine Greens"
+      }
+    }
+  },
+  "common": {
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "language": "Language"
+  },
+  "products": {
+    "title": "Products",
+    "noProducts": "No products found",
+    "price": "Price",
+    "quantity": "Quantity",
+    "addToCart": "Add to cart",
+    "requestPurchase": "Request purchase",
+    "categories": {
+      "vegetables": "Vegetables",
+      "fruits": "Fruits",
+      "dairy": "Dairy",
+      "meat": "Meat",
+      "honey": "Honey",
+      "other": "Other"
+    }
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "login": "Login",
+    "register": "Register",
+    "accountType": "Account Type",
+    "farmer": "Farmer",
+    "consumer": "Consumer"
+  },
+  "languageSelector": {
+    "selectLanguage": "Select a language",
+    "english": "English",
+    "albanian": "Albanian"
+  }
+}
