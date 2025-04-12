@@ -1,177 +1,200 @@
 import { defineStore } from 'pinia';
+import authService from '@/services/authService'; // Import the real service
+import apiClient from '@/services/api'; // Import apiClient to potentially fetch user data
 
-export interface User {
-  id: number;
-  name: string;
+// Define the structure for user data fetched from the backend
+// Adjust this based on the actual user profile endpoint response
+export interface UserProfile {
+  id: number; // Or string, depending on your backend
   email: string;
-  password?: string; // Not stored in real applications, only for mock
-  role: 'FARMER' | 'CONSUMER' | 'ADMIN';
+  firstName: string;
+  lastName: string;
+  role: 'FARMER' | 'CONSUMER' | 'ADMIN'; // Adjust roles as needed
+  // Add other relevant user fields
 }
 
 export interface AuthState {
-  user: User | null;
+  user: UserProfile | null; // Store fetched user profile
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
 }
 
-// Mock users for testing
-const mockUsers: User[] = [
-  {
-    id: 1,
-    name: 'John Farmer',
-    email: 'farmer@example.com',
-    password: 'password123', // In real app, passwords would be hashed
-    role: 'FARMER'
-  },
-  {
-    id: 2,
-    name: 'Jane Consumer',
-    email: 'consumer@example.com',
-    password: 'password123',
-    role: 'CONSUMER'
-  },
-  {
-    id: 3,
-    name: 'Admin User',
-    email: 'admin@example.com',
-    password: 'admin123',
-    role: 'ADMIN'
+// Helper function to get tokens from localStorage
+const getStoredTokens = (): { accessToken: string | null; refreshToken: string | null } => {
+  if (typeof window !== 'undefined') {
+    return {
+      accessToken: localStorage.getItem('accessToken'),
+      refreshToken: localStorage.getItem('refreshToken'),
+    };
   }
-];
+  return { accessToken: null, refreshToken: null };
+};
 
-// Define the auth store with proper typing
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => {
-    // Try to get stored user data from localStorage
-    const storedUser = localStorage.getItem('user');
-    
+    const { accessToken, refreshToken } = getStoredTokens();
     return {
-      user: storedUser ? JSON.parse(storedUser) : null,
-      isAuthenticated: !!storedUser,
+      user: null, // User profile fetched separately
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      isAuthenticated: !!accessToken, // Initially based on accessToken presence
       loading: false,
-      error: null
+      error: null,
     };
   },
-  
+
   getters: {
-    /**
-     * Get current user
-     */
-    currentUser: (state: AuthState) => state.user,
-    
-    /**
-     * Check if user is authenticated
-     */
-    isLoggedIn: (state: AuthState) => state.isAuthenticated,
-    
-    /**
-     * Get user role
-     */
-    userRole: (state: AuthState) => state.user?.role || null
+    currentUser: (state: AuthState): UserProfile | null => state.user,
+    isLoggedIn: (state: AuthState): boolean => state.isAuthenticated,
+    userRole: (state: AuthState): string | null => state.user?.role || null,
+    isLoading: (state: AuthState): boolean => state.loading,
+    authError: (state: AuthState): string | null => state.error,
   },
-    actions: {
+
+  actions: {
     /**
-     * Login user with email and password
+     * Fetch user profile from the backend using the access token.
+     * Assumes a GET /users/me endpoint exists. Adjust if necessary.
      */
-    async login(email: string, password: string): Promise<User> {
+    async fetchUserProfile(): Promise<void> {
+      if (!this.accessToken) {
+        console.warn('No access token available to fetch user profile.');
+        this.$patch({ user: null, isAuthenticated: false });
+        return;
+      }
       this.$patch({ loading: true, error: null });
-      
       try {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Find user with matching credentials in mock data
-        const user = mockUsers.find(
-          u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-        );
-        
-        if (!user) {
-          throw new Error('Invalid email or password');
-        }
-        
-        // Remove password before storing user data
-        const { password: _, ...userWithoutPassword } = user;
-          // Set auth state and store in localStorage
-        this.$patch({
-          user: userWithoutPassword,
-          isAuthenticated: true
+        // Ensure the Authorization header is set for this request
+        // Note: The interceptor in api.js should handle this, but being explicit can help debugging
+        const response = await apiClient.get<UserProfile>('/users/me', {
+           headers: { Authorization: `Bearer ${this.accessToken}` }
         });
-        localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-        
-        return user;      } catch (error: any) {
+        this.$patch({ user: response.data, isAuthenticated: true, loading: false });
+      } catch (error: any) {
+        console.error('Failed to fetch user profile:', error.response?.data || error.message);
+        // If fetching user fails (e.g., token expired, user deleted), treat as logged out
+        this.clearAuthData();
+        this.$patch({ error: 'Failed to fetch user details.', loading: false });
+        // Optionally re-throw or handle differently
+      }
+    },
+
+    /**
+     * Store authentication tokens and update state.
+     */
+    setAuthData(accessToken: string, refreshToken: string): void {
+      this.$patch({
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        isAuthenticated: true,
+        error: null,
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+      }
+      // Update apiClient default headers (interceptor should also handle this)
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+    },
+
+    /**
+     * Clear authentication tokens and user data from state and storage.
+     */
+    clearAuthData(): void {
+      this.$patch({
+        user: null,
+        accessToken: null,
+        refreshToken: null,
+        isAuthenticated: false,
+        error: null,
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+      }
+      // Remove auth header from apiClient defaults
+      delete apiClient.defaults.headers.common['Authorization'];
+    },
+
+    /**
+     * Login user using the authService.
+     */
+    async login(credentials: { email: string; password: string }): Promise<void> {
+      this.$patch({ loading: true, error: null });
+      try {
+        const data = await authService.login(credentials);
+        this.setAuthData(data.accessToken, data.refreshToken);
+        // Fetch user profile after successful login
+        await this.fetchUserProfile();
+      } catch (error: any) {
+        console.error('Store login failed:', error);
+        this.clearAuthData(); // Ensure clean state on login failure
         this.$patch({ error: error.message || 'Login failed' });
-        throw error;
+        throw error; // Re-throw for component handling
       } finally {
         this.$patch({ loading: false });
       }
     },
-      /**
-     * Register a new user
+
+    /**
+     * Register user using the authService.
+     * userData structure should match authService.register requirements.
      */
-    async register(userData: { name: string; email: string; password: string; role: 'FARMER' | 'CONSUMER' }): Promise<Omit<User, 'password'>> {
+    async register(userData: any): Promise<void> { // Use specific type for userData if possible
       this.$patch({ loading: true, error: null });
-      
       try {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Check if email already exists
-        const existingUser = mockUsers.find(
-          u => u.email.toLowerCase() === userData.email.toLowerCase()
-        );
-        
-        if (existingUser) {
-          throw new Error('Email already in use');
-        }
-        
-        // Create new user with generated ID
-        const newUser: User = {
-          id: Math.max(0, ...mockUsers.map(u => u.id)) + 1,
-          name: userData.name,
-          email: userData.email,
-          password: userData.password, // In a real app, this would be hashed
-          role: userData.role
-        };
-        
-        // Add to mock users array (in a real app, this would be saved in a database)
-        mockUsers.push(newUser);
-          // Remove password before storing user data
-        const { password: _, ...userWithoutPassword } = newUser;
-        
-        // Set auth state and store in localStorage
-        this.$patch({
-          user: userWithoutPassword,
-          isAuthenticated: true
-        });
-        localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-        
-        return userWithoutPassword;      } catch (error: any) {
+        const data = await authService.register(userData);
+        this.setAuthData(data.accessToken, data.refreshToken);
+        // Fetch user profile after successful registration
+        await this.fetchUserProfile();
+      } catch (error: any) {
+        console.error('Store registration failed:', error);
+        this.clearAuthData(); // Ensure clean state on registration failure
         this.$patch({ error: error.message || 'Registration failed' });
-        throw error;
+        throw error; // Re-throw for component handling
       } finally {
         this.$patch({ loading: false });
       }
     },
-    
+
     /**
-     * Logout current user
+     * Logout user using the authService.
      */
-    logout() {
-      this.user = null;
-      this.isAuthenticated = false;
-      localStorage.removeItem('user');
-    },
-    
-    /**
-     * Check authentication status
-     */
-    checkAuth() {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        this.user = JSON.parse(storedUser);
-        this.isAuthenticated = true;
+    async logout(): Promise<void> {
+      const tokenToInvalidate = this.refreshToken;
+      this.$patch({ loading: true }); // Indicate loading state
+      try {
+        if (tokenToInvalidate) {
+          await authService.logout(tokenToInvalidate);
+        } else {
+          console.warn('No refresh token found for logout.');
+        }
+      } catch (error: any) {
+        console.error('Store logout failed:', error);
+        // Still clear local data even if server logout fails
+      } finally {
+        this.clearAuthData();
+        this.$patch({ loading: false });
+        // Optionally redirect to login page
+        // router.push('/login'); // If router is accessible here
       }
-    }
-  }
+    },
+
+    /**
+     * Check authentication status on app load.
+     * If tokens exist, validate them by fetching the user profile.
+     */
+    async checkAuth(): Promise<void> {
+      if (this.accessToken) {
+        console.log('checkAuth: Access token found, attempting to fetch user profile.');
+        await this.fetchUserProfile(); // This will also handle token validation/expiry
+      } else {
+        console.log('checkAuth: No access token found.');
+        this.clearAuthData(); // Ensure consistent state if no token
+      }
+    },
+  },
 });

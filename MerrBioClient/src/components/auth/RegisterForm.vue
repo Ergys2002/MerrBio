@@ -15,22 +15,31 @@ const emit = defineEmits<Emits>();
 const router = useRouter();
 const authStore = useAuthStore();
 
-// Form state
+// Form state - Adjusted to match API requirements
 const formData = reactive({
-  name: '',
+  firstName: '',
+  lastName: '',
   email: '',
   password: '',
   confirmPassword: '',
-  role: 'CONSUMER' as 'FARMER' | 'CONSUMER',
+  birthDate: '', // Optional - Use YYYY-MM-DD format for input type="date"
+  phoneNumber: '', // Optional
+  gender: '' as 'MALE' | 'FEMALE' | 'OTHER' | '', // Optional
+  role: 'CONSUMER' as 'FARMER' | 'CONSUMER', // Default role
   acceptTerms: false
 });
 
-// Form validation and UI state
+// Form validation and UI state - Adjusted for new fields
 const errors = reactive({
-  name: '',
+  firstName: '',
+  lastName: '',
   email: '',
   password: '',
   confirmPassword: '',
+  birthDate: '', // Optional validation
+  phoneNumber: '', // Optional validation
+  gender: '', // Optional validation
+  role: '',
   acceptTerms: '',
   form: ''
 });
@@ -45,16 +54,27 @@ const validateForm = (): boolean => {
   let isValid = true;
   
   // Reset errors
-  errors.name = '';
+  errors.firstName = '';
+  errors.lastName = '';
   errors.email = '';
   errors.password = '';
   errors.confirmPassword = '';
+  errors.birthDate = '';
+  errors.phoneNumber = '';
+  errors.gender = '';
+  errors.role = '';
   errors.acceptTerms = '';
   errors.form = '';
-  
-  // Name validation
-  if (!formData.name.trim()) {
-    errors.name = 'Name is required';
+
+  // First Name validation
+  if (!formData.firstName.trim()) {
+    errors.firstName = 'First name is required';
+    isValid = false;
+  }
+
+  // Last Name validation
+  if (!formData.lastName.trim()) {
+    errors.lastName = 'Last name is required';
     isValid = false;
   }
   
@@ -103,12 +123,20 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
   
   try {
-    await authStore.register({
-      name: formData.name,
+    // Construct user data matching the service requirements
+    const userData: any = { // Use a specific interface if defined in authService.ts
+      firstName: formData.firstName,
+      lastName: formData.lastName,
       email: formData.email,
       password: formData.password,
-      role: formData.role
-    });
+      role: formData.role,
+      // Include optional fields only if they have a value
+      ...(formData.birthDate && { birthDate: new Date(formData.birthDate).toISOString() }), // Convert to ISO string
+      ...(formData.phoneNumber && { phoneNumber: formData.phoneNumber }),
+      ...(formData.gender && { gender: formData.gender }),
+    };
+
+    await authStore.register(userData);
     
     // Emit success event
     emit('register-success');
@@ -122,7 +150,8 @@ const handleSubmit = async () => {
       router.push('/');
     }
   } catch (error: any) {
-    errors.form = error.message || 'Registration failed. Please try again.';
+    // Use error message from store/service if available
+    errors.form = error?.message || 'Registration failed. Please try again.';
   } finally {
     isSubmitting.value = false;
   }
@@ -144,19 +173,32 @@ const togglePasswordVisibility = () => {
         {{ errors.form }}
       </div>
       
-      <!-- Name field -->
+      <!-- First Name field -->
       <div class="form-group">
-        <label for="register-name">Full Name</label>
+        <label for="register-firstName">First Name</label>
         <input
-          id="register-name"
-          v-model="formData.name"
+          id="register-firstName"
+          v-model="formData.firstName"
           type="text"
-          placeholder="Your full name"
-          :class="{ 'has-error': errors.name }"
+          placeholder="Your first name"
+          :class="{ 'has-error': errors.firstName }"
         />
-        <span v-if="errors.name" class="error-message">{{ errors.name }}</span>
+        <span v-if="errors.firstName" class="error-message">{{ errors.firstName }}</span>
       </div>
-      
+
+      <!-- Last Name field -->
+      <div class="form-group">
+        <label for="register-lastName">Last Name</label>
+        <input
+          id="register-lastName"
+          v-model="formData.lastName"
+          type="text"
+          placeholder="Your last name"
+          :class="{ 'has-error': errors.lastName }"
+        />
+        <span v-if="errors.lastName" class="error-message">{{ errors.lastName }}</span>
+      </div>
+
       <!-- Email field -->
       <div class="form-group">
         <label for="register-email">Email</label>
@@ -204,6 +246,40 @@ const togglePasswordVisibility = () => {
           :class="{ 'has-error': errors.confirmPassword }"
         />
         <span v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</span>
+      </div>
+      <!-- Optional Fields -->
+      <div class="form-group">
+          <label for="register-birthDate">Birth Date (Optional)</label>
+          <input
+            id="register-birthDate"
+            v-model="formData.birthDate"
+            type="date"
+            :class="{ 'has-error': errors.birthDate }"
+          />
+          <span v-if="errors.birthDate" class="error-message">{{ errors.birthDate }}</span>
+      </div>
+
+       <div class="form-group">
+          <label for="register-phoneNumber">Phone Number (Optional)</label>
+          <input
+            id="register-phoneNumber"
+            v-model="formData.phoneNumber"
+            type="tel"
+            placeholder="Your phone number"
+            :class="{ 'has-error': errors.phoneNumber }"
+          />
+          <span v-if="errors.phoneNumber" class="error-message">{{ errors.phoneNumber }}</span>
+      </div>
+
+       <div class="form-group">
+          <label for="register-gender">Gender (Optional)</label>
+          <select id="register-gender" v-model="formData.gender" :class="{ 'has-error': errors.gender }">
+              <option value="">Select Gender</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
+          </select>
+          <span v-if="errors.gender" class="error-message">{{ errors.gender }}</span>
       </div>
       
       <!-- Role selection -->
