@@ -3,15 +3,30 @@ import type { AxiosError } from 'axios';
 
 // --- Interfaces based on Swagger Documentation ---
 
-interface RegisterUserData {
+// Base registration data shared by both farmer and customer
+interface BaseRegisterData {
   email: string;
-  password?: string; // Password might be optional if handled differently (e.g., social login)
+  password: string;
   firstName: string;
   lastName: string;
   birthDate?: string; // Optional based on your form/requirements
   phoneNumber?: string; // Optional based on your form/requirements
-  role: 'FARMER' | 'CONSUMER' | 'ADMIN'; // Adjust roles as needed
   gender?: 'MALE' | 'FEMALE' | 'OTHER'; // Optional based on your form/requirements
+}
+
+// Customer-specific registration data
+interface CustomerRegisterData extends BaseRegisterData {}
+
+// Farmer-specific registration data
+interface FarmerRegisterData extends BaseRegisterData {
+  farmName: string;
+  farmLocation: string;
+  bio?: string;
+}
+
+// Type for registration data that includes role for internal use
+interface RegisterUserData extends BaseRegisterData {
+  role: 'FARMER' | 'CONSUMER' | 'ADMIN';
 }
 
 interface LoginCredentials {
@@ -52,13 +67,43 @@ const handleApiError = (error: unknown): ApiError => {
 // --- Service Functions ---
 
 /**
- * Register a new user.
+ * Register a new customer.
+ */
+export const registerCustomer = async (userData: CustomerRegisterData): Promise<AuthResponse> => {
+  try {
+    const response = await apiClient.post<AuthResponse>('/auth/register/customer', userData);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Register a new farmer.
+ */
+export const registerFarmer = async (userData: FarmerRegisterData): Promise<AuthResponse> => {
+  try {
+    const response = await apiClient.post<AuthResponse>('/auth/register/farmer', userData);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Register a new user based on their role.
  */
 export const register = async (userData: RegisterUserData): Promise<AuthResponse> => {
   try {
-    const response = await apiClient.post<AuthResponse>('/auth/register', userData);
-    // Note: Tokens are typically handled/stored by the auth store after calling this service
-    return response.data;
+    const { role, ...userDataWithoutRole } = userData;
+    
+    if (role === 'FARMER') {
+      // Type assertion since we know this will have the farmer fields
+      return await registerFarmer(userDataWithoutRole as FarmerRegisterData);
+    } else {
+      // Default to customer registration for any non-farmer role
+      return await registerCustomer(userDataWithoutRole as CustomerRegisterData);
+    }
   } catch (error) {
     throw handleApiError(error);
   }

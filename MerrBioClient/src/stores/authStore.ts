@@ -139,15 +139,14 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.$patch({ loading: false });
       }
-    },
-
-    /**
+    },    /**
      * Register user using the authService.
      * userData structure should match authService.register requirements.
      */
-    async register(userData: any): Promise<void> { // Use specific type for userData if possible
+    async register(userData: any): Promise<void> { // Type is 'any' to accommodate both farmer and consumer data
       this.$patch({ loading: true, error: null });
       try {
+        // Using the updated register function that handles different endpoints based on role
         const data = await authService.register(userData);
         this.setAuthData(data.accessToken, data.refreshToken);
         // Fetch user profile after successful registration
