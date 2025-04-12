@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { TranslationService } from '@/services/translationService'
 
@@ -106,10 +106,8 @@ onMounted(() => {
 })
 
 // Clean up event listener
-onMounted(() => {
-  return () => {
-    document.removeEventListener('click', closeDropdown)
-  }
+onUnmounted(() => {
+  document.removeEventListener('click', closeDropdown)
 })
 </script>
 

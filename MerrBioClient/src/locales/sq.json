@@ -20,8 +20,7 @@
     "myFarm": "Ferma Ime",
     "notifications": "Njoftimet",
     "messages": "Mesazhet"
-  },
-  "home": {
+  },  "home": {
     "hero": {
       "title": "Freskët nga Ferma në Tryezën Tuaj",
       "description": "MerrBio ju lidh drejtpërdrejt me fermerët vendas për produkte organike më të freskëta.",
@@ -29,7 +28,30 @@
       "listButton": "Listoni Produktet Tuaja",
       "imageAlt": "Produkte të freskëta nga ferma"
     },
+    "recentlyAdded": {
+      "label": "Shtuar së Fundmi",
+      "first": "Domatet Bio nga Ferma Gjelbrimi",
+      "second": "Qumësht i freskët nga Bulmetore Tirana", 
+      "third": "Mollë të kuqe nga Pogradec",
+      "fourth": "Vezë fushe nga ferma Hatixhe"
+    },
+    "howItWorks": {
+      "title": "Si Funksionon",
+      "step1": {
+        "title": "Shfletoni Produktet",
+        "description": "Shfletoni përzgjedhjen tonë të gjerë të produkteve të freskëta dhe organike nga fermerët vendas."
+      },
+      "step2": {
+        "title": "Bëni një Kërkesë",
+        "description": "Kërkoni produktet që dëshironi drejtpërdrejt nga fermeri."
+      },
+      "step3": {
+        "title": "Nga Ferma në Tryezë",
+        "description": "Merrni produkte të freskëta drejtpërdrejt nga ferma në tryezën tuaj."
+      }
+    },
     "featuredProducts": {
+      "title": "Produktet e Rekomanduara",
       "tomatoes": {
         "name": "Domate Organike të Freskëta",
         "description": "Domate organike të rritura lokalisht, perfekte për sallatat dhe gatim.",
@@ -44,7 +66,33 @@
         "name": "Marule Organike",
         "description": "Marule organike e freskët e korrur çdo ditë.",
         "farmer": "Gjelbërimet e Diellit"
+      },
+      "apples": {
+        "name": "Mollë të Kuqe Organike",
+        "description": "Mollë të ëmbla dhe të lëngshme të rritura pa pesticide.",
+        "farmer": "Kopshti Malor"
+      },
+      "cheese": {
+        "name": "Djath Tradicional",
+        "description": "Djath i bërë me dorë duke përdorur metoda tradicionale.",
+        "farmer": "Bulmetore Alpine"
       }
+    },
+    "farmerCta": {
+      "title": "Bëhuni Pjesë e Rrjetit Tonë të Fermerëve Vendas",
+      "description": "Listoni produktet tuaja, lidhuni me klientët dhe rritni biznesin tuaj me MerrBio.",
+      "imageAlt": "Fermer i lumtur në fushë",
+      "joinButton": "Bashkohu si Fermer",
+      "testimonial": "Që kur u bashkova me MerrBio, jam lidhur me klientë që vërtet vlerësojnë metodat e mia të bujqësisë organike. Shitjet e mia janë rritur dhe kam krijuar një bazë besnike klientësh.",
+      "testimonialRole": "Fermer Organik"
+    },
+    "stats": {
+      "farmers": "Fermerë Vendas",
+      "products": "Produkte të Freskëta",
+      "customers": "Klientë të Kënaqur"
+    },
+    "trustIndicators": {
+      "title": "Çertifikimet dhe Cilësia"
     }
   },
   "common": {
@@ -92,11 +140,14 @@
     "reviews": "Recensionet",
     "writeReview": "Shkruaj një Recension",
     "categories": {
+      "all": "Të Gjitha Kategoritë",
       "vegetables": "Perime",
       "fruits": "Fruta",
       "dairy": "Bulmet",
       "meat": "Mish",
-      "honey": "Mjaltë",
+      "honey": "Mjaltë", 
+      "eggs": "Vezë",
+      "herbs": "Bimë Aromatike",
       "other": "Të tjera"
     },
     "units": {
@@ -119,7 +170,13 @@
       "rating": "Vlerësimi",
       "apply": "Apliko",
       "clear": "Pastro"
-    }
+    },
+    "badges": {
+      "new": "I Ri",
+      "popular": "Popullor"
+    },
+    "viewButton": "Shiko Detajet",
+    "viewAllButton": "Shiko të Gjitha"
   },
   "auth": {
     "email": "Email",

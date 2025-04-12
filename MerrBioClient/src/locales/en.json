@@ -13,8 +13,7 @@
     "login": "Login",
     "register": "Register",
     "logout": "Logout"
-  },
-  "home": {
+  },  "home": {
     "hero": {
       "title": "Fresh from Farm to Your Table",
       "description": "MerrBio connects you directly with local farmers for the freshest organic produce and products.",
@@ -22,7 +21,30 @@
       "listButton": "List Your Products",
       "imageAlt": "Farm fresh produce"
     },
+    "recentlyAdded": {
+      "label": "Recently Added",
+      "first": "Organic Tomatoes from Green Valley Farm",
+      "second": "Fresh Milk from Tirana Dairy",
+      "third": "Red Apples from Pogradec",
+      "fourth": "Free-range Eggs from Hatixhe Farm"
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "step1": {
+        "title": "Browse Products",
+        "description": "Browse through our wide selection of fresh, organic products from local farmers."
+      },
+      "step2": {
+        "title": "Make a Request",
+        "description": "Request the products you want directly from the farmer."
+      },
+      "step3": {
+        "title": "Farm to Table",
+        "description": "Receive fresh products directly from the farm to your table."
+      }
+    },
     "featuredProducts": {
+      "title": "Featured Products",
       "tomatoes": {
         "name": "Fresh Organic Tomatoes",
         "description": "Locally grown organic tomatoes, perfect for salads and cooking.",
@@ -37,9 +59,35 @@
         "name": "Organic Lettuce",
         "description": "Crisp and fresh organic lettuce harvested daily.",
         "farmer": "Sunshine Greens"
+      },
+      "apples": {
+        "name": "Organic Red Apples",
+        "description": "Sweet and juicy apples grown without pesticides.",
+        "farmer": "Mountain Orchard"
+      },
+      "cheese": {
+        "name": "Traditional Cheese",
+        "description": "Handmade cheese using traditional methods.",
+        "farmer": "Alpine Dairy"
       }
+    },
+    "farmerCta": {
+      "title": "Join Our Network of Local Farmers",
+      "description": "List your products, connect with customers, and grow your business with MerrBio.",
+      "imageAlt": "Happy farmer in field",
+      "joinButton": "Join as Farmer",
+      "testimonial": "Since joining MerrBio, I've connected with customers who truly value my organic farming methods. My sales have increased and I've built a loyal customer base.",
+      "testimonialRole": "Organic Farmer"
+    },
+    "stats": {
+      "farmers": "Local Farmers",
+      "products": "Fresh Products",
+      "customers": "Happy Customers"
+    },
+    "trustIndicators": {
+      "title": "Certifications & Quality"
     }
-  },  "common": {
+  },"common": {
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
@@ -61,10 +109,11 @@
     "price": "Price",
     "quantity": "Quantity",
     "addToCart": "Add to cart",
-    "requestPurchase": "Request purchase",
-    "categories": {
+    "requestPurchase": "Request purchase",    "categories": {
+      "all": "All Categories",
       "vegetables": "Vegetables",
       "fruits": "Fruits",
+      "eggs": "Eggs",
       "dairy": "Dairy",
       "meat": "Meat",
       "honey": "Honey",
