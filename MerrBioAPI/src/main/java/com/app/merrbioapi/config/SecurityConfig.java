@@ -40,7 +40,10 @@ public class SecurityConfig {
             "/webjars/**",
             "/api/v1/webjars/**", // Keep if prefix is used
             "/error",
-            "/api/v1/error" // Keep if prefix is used
+            "/api/v1/error", // Keep if prefix is used
+            "/img/**",
+            "/products/advanced-search"
+
     };
 
     // Define paths for specific HTTP methods if needed

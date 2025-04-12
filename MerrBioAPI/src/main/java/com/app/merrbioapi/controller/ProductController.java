@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.PermitAll;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -160,6 +161,7 @@ public class ProductController {
             @ApiResponse(responseCode = "400", description = "Invalid input parameters")
     })
     @PostMapping("/advanced-search")
+    @PermitAll
     public ResponseEntity<Page<ProductResponse>> advancedSearch(
             @Parameter(description = "Optional search keyword") @RequestParam(required = false) String query,
             @RequestBody(required = false) ProductSearchRequest searchRequest) {
