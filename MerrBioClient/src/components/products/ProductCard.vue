@@ -1,72 +1,102 @@
 <script setup lang="ts">
 /**
- * ProductCard component displays individual product information in a card layout
+ * ProductCard displays individual product information in a card layout
  * @component
  */
-import { defineProps } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useRequestStore } from '@/stores/requestStore'
+import type { Product } from '@/stores/productStore'
 
-const router = useRouter();
-
-interface Farmer {
-  id: number;
-  name: string;
-  location: string;
+interface Props {
+  product: Product
 }
 
-interface ProductProps {
-  id: number;
-  name: string;
-  description: string;
-  image: string;
-  price: number;
-  unit: string;
-  category: string;
-  organic: boolean;
-  farmer: Farmer;
-}
+const props = defineProps<Props>()
+const router = useRouter()
+const requestStore = useRequestStore()
 
-const props = defineProps<ProductProps>();
+const hasActiveRequest = computed(() => requestStore.hasRequest(props.product.id))
 
-/**
- * Navigate to product detail page
- */
 const viewProductDetails = () => {
-  router.push(`/products/${props.id}`);
-};
+  router.push(`/products/${props.product.id}`)
+}
 
-/**
- * Handle request to buy product
- */
 const requestToBuy = () => {
-  // In a real implementation, this would open a modal or navigate to checkout
-  // For now, we'll just log and navigate to the product detail page
-  console.log('Request to buy product:', props.id);
-  router.push(`/products/${props.id}`);
-};
+  requestStore.addRequest(props.product.id, props.product.minOrderQuantity)
+  // You could add a toast notification here in the future
+}
+
+const formattedPrice = computed(() => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'EUR'
+  }).format(props.product.price)
+})
 </script>
 
 <template>
   <div class="product-card">
-    <div class="product-badge" v-if="organic">
-      <span>Organic</span>
+    <!-- Product badges -->
+    <div class="badge-container">
+      <span v-if="product.isOrganic" class="badge organic">
+        Organic
+      </span>
+      <span v-if="!product.isInStock" class="badge out-of-stock">
+        Out of Stock
+      </span>
     </div>
-    
-    <div class="product-image">
-      <img :src="image" :alt="name" @click="viewProductDetails" />
+
+    <!-- Product image -->
+    <div class="image-container" @click="viewProductDetails">
+      <img 
+        :src="product.thumbnailUrl" 
+        :alt="product.name"
+        class="product-image"
+      />
     </div>
-    
+
+    <!-- Product info -->
     <div class="product-info">
-      <h3 class="product-name" @click="viewProductDetails">{{ name }}</h3>
-      <p class="product-farmer">by {{ farmer.name }}</p>
-      <p class="product-price">{{ price.toFixed(2) }}€ / {{ unit }}</p>
-      
-      <div class="product-actions">
-        <button class="view-button" @click="viewProductDetails">
+      <h3 class="product-name" @click="viewProductDetails">
+        {{ product.name }}
+      </h3>
+
+      <div class="farmer-info">
+        <span class="farmer-name">{{ product.farmerName }}</span>
+        <span class="farmer-location">{{ product.farmLocation }}</span>
+      </div>
+
+      <div class="categories">
+        <span 
+          v-for="category in product.categories" 
+          :key="category" 
+          class="category-tag"
+        >
+          {{ category }}
+        </span>
+      </div>
+
+      <div class="price-section">
+        <span class="price">{{ formattedPrice }}</span>
+        <span class="unit">/ {{ product.unit }}</span>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="card-actions">
+        <button 
+          class="btn-action view"
+          @click="viewProductDetails"
+        >
           View Details
         </button>
-        <button class="buy-button" @click="requestToBuy">
-          Request to Buy
+        <button 
+          class="btn-action request"
+          @click="requestToBuy"
+          :class="{ 'requested': hasActiveRequest }"
+          :disabled="!product.isInStock || hasActiveRequest"
+        >
+          {{ hasActiveRequest ? 'Requested' : 'Request to Buy' }}
         </button>
       </div>
     </div>
@@ -75,48 +105,63 @@ const requestToBuy = () => {
 
 <style scoped>
 .product-card {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: white;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   position: relative;
-  height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.product-badge {
+.badge-container {
   position: absolute;
   top: 12px;
   right: 12px;
-  background-color: #4caf50;
-  color: white;
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   z-index: 1;
 }
 
-.product-image {
-  height: 200px;
-  overflow: hidden;
+.badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
-.product-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
+.badge.organic {
+  background-color: #4caf50;
+  color: white;
+}
+
+.badge.out-of-stock {
+  background-color: #f44336;
+  color: white;
+}
+
+.image-container {
+  aspect-ratio: 4/3;
+  overflow: hidden;
   cursor: pointer;
 }
 
-.product-card:hover .product-image img {
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.image-container:hover .product-image {
   transform: scale(1.05);
 }
 
@@ -124,68 +169,123 @@ const requestToBuy = () => {
   padding: 16px;
   display: flex;
   flex-direction: column;
+  gap: 12px;
   flex-grow: 1;
 }
 
 .product-name {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 4px;
-  color: #333;
+  color: #1a1a1a;
+  margin: 0;
   cursor: pointer;
+  transition: color 0.2s ease;
 }
 
 .product-name:hover {
   color: #4caf50;
 }
 
-.product-farmer {
+.farmer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.farmer-name {
   font-size: 0.9rem;
   color: #4caf50;
-  margin-bottom: 8px;
+  font-weight: 500;
 }
 
-.product-price {
-  font-weight: 600;
-  font-size: 1.1rem;
-  margin-bottom: 16px;
+.farmer-location {
+  font-size: 0.8rem;
+  color: #666;
 }
 
-.product-actions {
-  margin-top: auto;
+.categories {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.view-button, .buy-button {
-  padding: 8px 12px;
-  border: none;
+.category-tag {
+  padding: 4px 8px;
+  background-color: #f5f5f5;
   border-radius: 4px;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.price-section {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
+.price {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.unit {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-action {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.1s;
-  flex: 1;
+  transition: all 0.2s ease;
 }
 
-.view-button {
+.btn-action.view {
   background-color: #f5f5f5;
-  color: #333;
+  color: #1a1a1a;
 }
 
-.view-button:hover {
+.btn-action.view:hover {
   background-color: #e0e0e0;
 }
 
-.buy-button {
+.btn-action.request {
   background-color: #4caf50;
   color: white;
 }
 
-.buy-button:hover {
-  background-color: #3d8b40;
+.btn-action.request:hover:not(:disabled) {
+  background-color: #43a047;
 }
 
-.view-button:active, .buy-button:active {
-  transform: scale(0.98);
+.btn-action.request:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-action.request.requested {
+  background-color: #81c784;
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .product-card {
+    max-width: 100%;
+  }
+
+  .card-actions {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

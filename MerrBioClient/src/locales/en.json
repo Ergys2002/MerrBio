@@ -88,6 +88,8 @@
       "title": "Certifications & Quality"
     }
   },"common": {
+    "email": "Email",
+    "password": "Password",
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
@@ -101,7 +103,9 @@
     "success": "Success",
     "language": "Language",
     "prev": "Prev",
-    "next": "Next"
+    "next": "Next",
+    "show": "Show",
+    "hide": "Hide"
   },
   "products": {
     "title": "Products",
@@ -121,15 +125,15 @@
     }
   },
   "auth": {
-    "email": "Email",
-    "password": "Password",
-    "confirmPassword": "Confirm Password",
-    "forgotPassword": "Forgot Password?",
+    "welcome": "Welcome to MerrBio",
+    "joinCommunity": "Join our community of farmers and consumers for fresh, local products",
     "login": "Login",
     "register": "Register",
-    "accountType": "Account Type",
-    "farmer": "Farmer",
-    "consumer": "Consumer"
+    "forgotPassword": "Forgot password?",
+    "newToMerrBio": "New to MerrBio? Create an account",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "haveAccount": "Already have an account? Login here"
   },
   "languageSelector": {
     "selectLanguage": "Select a language",

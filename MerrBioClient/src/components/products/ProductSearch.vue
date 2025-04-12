@@ -1,169 +1,209 @@
 <script setup lang="ts">
 /**
- * ProductSearch component provides search and filter functionality for products
+ * ProductSearch provides search, filter, and sort controls for products
  * @component
  */
-import { ref, watch } from 'vue';
+import { ref, watch } from 'vue'
+import { productCategories } from '@/stores/productStore'
+import type { FilterOptions, Product } from '@/stores/productStore'
 
-interface FilterOptions {
-  search: string;
-  category: string;
-  minPrice: number | null;
-  maxPrice: number | null;
-  organic: boolean | null;
+interface SortOption {
+  field: keyof Product | ''
+  direction: 'asc' | 'desc'
 }
 
 interface EmitEvents {
   (e: 'update:filters', filters: FilterOptions): void;
+  (e: 'update:sort', sort: SortOption): void;
 }
 
-const emit = defineEmits<EmitEvents>();
+const emit = defineEmits<EmitEvents>()
 
-// Category options
-const categories = [
-  { value: '', label: 'All Categories' },
-  { value: 'vegetables', label: 'Vegetables' },
-  { value: 'fruits', label: 'Fruits' },
-  { value: 'dairy', label: 'Dairy Products' },
-  { value: 'meat', label: 'Meat & Poultry' },
-  { value: 'eggs', label: 'Eggs' },
-  { value: 'honey', label: 'Honey & Bee Products' },
-  { value: 'herbs', label: 'Herbs & Spices' }
-];
+// State
+const search = ref('')
+const selectedCategories = ref<string[]>([])
+const minPrice = ref<number | null>(null)
+const maxPrice = ref<number | null>(null)
+const isOrganic = ref<boolean | null>(null)
+const inStock = ref<boolean | null>(null)
+const sortField = ref<string>('')
+const sortDirection = ref<'asc' | 'desc'>('asc')
 
-// Filter state
-const filters = ref<FilterOptions>({
-  search: '',
-  category: '',
-  minPrice: null,
-  maxPrice: null,
-  organic: null
-});
+// Sort options
+const sortOptions = [
+  { value: 'name', label: 'Name' },
+  { value: 'price', label: 'Price' },
+  { value: 'createdAt', label: 'Recently Added' }
+]
 
-// Price range options
+// Price range presets
 const priceRanges = [
-  { value: 'all', label: 'Any Price', min: null, max: null },
-  { value: 'under5', label: 'Under 5€', min: 0, max: 5 },
-  { value: '5to10', label: '5€ to 10€', min: 5, max: 10 },
-  { value: '10to20', label: '10€ to 20€', min: 10, max: 20 },
-  { value: 'over20', label: 'Over 20€', min: 20, max: null }
-];
+  { min: null, max: null, label: 'Any Price' },
+  { min: 0, max: 5, label: 'Under €5' },
+  { min: 5, max: 10, label: '€5 to €10' },
+  { min: 10, max: 20, label: '€10 to €20' },
+  { min: 20, max: null, label: 'Over €20' }
+]
 
-const selectedPriceRange = ref('all');
+// Active price range
+const activePriceRange = ref(priceRanges[0])
 
-// Watch for changes in price range selection
-watch(selectedPriceRange, (newValue) => {
-  const range = priceRanges.find(r => r.value === newValue);
-  if (range) {
-    filters.value.minPrice = range.min;
-    filters.value.maxPrice = range.max;
-    updateFilters();
+// Update filters with debounce
+let debounceTimeout: number | null = null
+const updateFilters = () => {
+  if (debounceTimeout) clearTimeout(debounceTimeout)
+  
+  debounceTimeout = window.setTimeout(() => {
+  emit('update:filters', {
+      search: search.value,
+      categories: selectedCategories.value,
+      minPrice: minPrice.value,
+      maxPrice: maxPrice.value,
+      isOrganic: isOrganic.value,
+      sortBy: (sortField.value || 'latest') as FilterOptions['sortBy']
+    })
+  }, 300)
+}
+
+// Update sort
+const updateSort = () => {
+  if (!sortField.value) {
+    sortDirection.value = 'asc'
   }
-});
+  
+  emit('update:sort', {
+    field: sortField.value as keyof Product | '',
+    direction: sortDirection.value
+  })
+}
 
-// Watch for changes in any filter and emit the update
-watch(filters, () => {
-  updateFilters();
-}, { deep: true });
+// Watch for changes
+watch([search, selectedCategories, isOrganic, inStock], updateFilters)
+watch([sortField, sortDirection], updateSort)
+
+// Handle price range selection
+const selectPriceRange = (range: typeof priceRanges[0]) => {
+  activePriceRange.value = range
+  minPrice.value = range.min
+  maxPrice.value = range.max
+  updateFilters()
+}
 
 // Reset all filters
 const resetFilters = () => {
-  filters.value = {
-    search: '',
-    category: '',
-    minPrice: null,
-    maxPrice: null,
-    organic: null
-  };
-  selectedPriceRange.value = 'all';
-};
-
-// Emit filter updates
-const updateFilters = () => {
-  emit('update:filters', { ...filters.value });
-};
-
-// Handle search input with debounce
-let debounceTimeout: NodeJS.Timeout | null = null;
-const handleSearchInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  
-  if (debounceTimeout) {
-    clearTimeout(debounceTimeout);
-  }
-  
-  debounceTimeout = setTimeout(() => {
-    filters.value.search = target.value;
-    updateFilters();
-  }, 300);
-};
+  search.value = ''
+  selectedCategories.value = []
+  activePriceRange.value = priceRanges[0]
+  minPrice.value = null
+  maxPrice.value = null
+  isOrganic.value = null
+  inStock.value = null
+  sortField.value = ''
+  sortDirection.value = 'asc'
+  updateFilters()
+  updateSort()
+}
 </script>
 
 <template>
   <div class="product-search">
-    <!-- Search Bar -->
-    <div class="search-bar">
+    <!-- Search Section -->
+    <div class="search-section">
       <input
         type="text"
+        v-model="search"
         placeholder="Search products..."
-        :value="filters.search"
-        @input="handleSearchInput"
+        class="search-input"
       />
     </div>
-    
-    <div class="filters-section">
+
+    <!-- Filter Section -->
+    <div class="filter-section">
       <h3>Filters</h3>
-      
-      <!-- Category Filter -->
+
+      <!-- Categories -->
       <div class="filter-group">
-        <label for="category">Category</label>
-        <select 
-          id="category"
-          v-model="filters.category"
-        >
-          <option 
-            v-for="category in categories" 
-            :key="category.value" 
-            :value="category.value"
+        <label>Categories</label>
+        <div class="category-tags">
+          <button
+            v-for="category in productCategories"
+            :key="category"
+            class="category-tag"
+            :class="{ active: selectedCategories.includes(category) }"
+            @click="selectedCategories = selectedCategories.includes(category)
+              ? selectedCategories.filter(c => c !== category)
+              : [...selectedCategories, category]"
           >
-            {{ category.label }}
-          </option>
-        </select>
+            {{ category }}
+          </button>
+        </div>
       </div>
-      
-      <!-- Price Range Filter -->
+
+      <!-- Price Range -->
       <div class="filter-group">
-        <label for="price-range">Price Range</label>
-        <select 
-          id="price-range"
-          v-model="selectedPriceRange"
-        >
-          <option 
-            v-for="range in priceRanges" 
-            :key="range.value" 
-            :value="range.value"
+        <label>Price Range</label>
+        <div class="price-range-buttons">
+          <button
+            v-for="range in priceRanges"
+            :key="range.label"
+            class="price-range-btn"
+            :class="{ active: range === activePriceRange }"
+            @click="selectPriceRange(range)"
           >
             {{ range.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Toggle Filters -->
+      <div class="filter-group toggles">
+        <!-- Organic Filter -->
+        <button
+          class="toggle-btn"
+          :class="{ active: isOrganic === true }"
+          @click="isOrganic = isOrganic === true ? null : true"
+        >
+          <span class="toggle-icon">🌿</span>
+          Organic Only
+        </button>
+
+        <!-- In Stock Filter -->
+        <button
+          class="toggle-btn"
+          :class="{ active: inStock === true }"
+          @click="inStock = inStock === true ? null : true"
+        >
+          <span class="toggle-icon">✓</span>
+          In Stock Only
+        </button>
+      </div>
+    </div>
+
+    <!-- Sort Section -->
+    <div class="sort-section">
+      <div class="sort-controls">
+        <select v-model="sortField" class="sort-select">
+          <option value="">Sort by...</option>
+          <option
+            v-for="option in sortOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
           </option>
         </select>
+        <button
+          v-if="sortField"
+          class="sort-direction"
+          @click="sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'"
+        >
+          {{ sortDirection === 'asc' ? '↑' : '↓' }}
+        </button>
       </div>
-      
-      <!-- Organic Filter -->
-      <div class="filter-group checkbox-group">
-        <label class="checkbox-container">
-          <input 
-            type="checkbox"
-            v-model="filters.organic"
-            :indeterminate="filters.organic === null"
-            @click="filters.organic = filters.organic === true ? null : true"
-          />
-          <span class="checkbox-label">Organic Products Only</span>
-        </label>
-      </div>
-      
-      <!-- Reset Filters Button -->
-      <button class="reset-button" @click="resetFilters">
-        Reset Filters
+
+      <!-- Reset Filters -->
+      <button class="reset-btn" @click="resetFilters">
+        Reset All Filters
       </button>
     </div>
   </div>
@@ -171,114 +211,223 @@ const handleSearchInput = (event: Event) => {
 
 <style scoped>
 .product-search {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.search-section {
   margin-bottom: 24px;
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.search-bar {
-  margin-bottom: 16px;
-}
-
-.search-bar input {
+.search-input {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  transition: border-color 0.2s;
 }
 
-.search-bar input:focus {
-  outline: none;
+.search-input:focus {
   border-color: #4caf50;
+  outline: none;
 }
 
-.filters-section h3 {
-  margin: 0 0 16px 0;
+.filter-section {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 24px;
+  margin-bottom: 24px;
+}
+
+.filter-section h3 {
   font-size: 1.1rem;
+  margin-bottom: 16px;
   color: #333;
-  font-weight: 600;
 }
 
 .filter-group {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .filter-group label {
   display: block;
-  margin-bottom: 8px;
-  color: #555;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: #666;
+}
+
+.category-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-tag {
+  padding: 6px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  background: none;
   font-size: 0.9rem;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.filter-group select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background-color: #fff;
-  font-size: 0.95rem;
-  transition: border-color 0.3s;
-}
-
-.filter-group select:focus {
-  outline: none;
+.category-tag:hover {
   border-color: #4caf50;
+  color: #4caf50;
 }
 
-.checkbox-group {
+.category-tag.active {
+  background: #4caf50;
+  border-color: #4caf50;
+  color: white;
+}
+
+.price-range-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.price-range-btn {
+  padding: 6px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  background: none;
+  font-size: 0.9rem;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.price-range-btn:hover {
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.price-range-btn.active {
+  background: #4caf50;
+  border-color: #4caf50;
+  color: white;
+}
+
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.toggle-btn {
   display: flex;
   align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: none;
+  font-size: 0.9rem;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.checkbox-container {
+.toggle-btn:hover {
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.toggle-btn.active {
+  background: #4caf50;
+  border-color: #4caf50;
+  color: white;
+}
+
+.toggle-icon {
+  font-size: 1.1rem;
+}
+
+.sort-section {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.sort-controls {
   display: flex;
   align-items: center;
-  cursor: pointer;
+  gap: 8px;
 }
 
-.checkbox-container input {
-  margin-right: 8px;
-  cursor: pointer;
-}
-
-.checkbox-label {
-  font-size: 0.95rem;
-  color: #555;
-}
-
-.reset-button {
-  width: 100%;
-  padding: 10px;
-  background-color: #f5f5f5;
-  color: #555;
-  border: 1px solid #ddd;
+.sort-select {
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
   border-radius: 6px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.sort-direction {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: none;
+  font-size: 1.1rem;
+  color: #666;
   cursor: pointer;
-  transition: background-color 0.3s;
-  margin-top: 8px;
+  transition: all 0.2s;
 }
 
-.reset-button:hover {
-  background-color: #e8e8e8;
+.sort-direction:hover {
+  border-color: #4caf50;
+  color: #4caf50;
 }
 
-@media (min-width: 768px) {
-  .filters-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+.reset-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #f5f5f5;
+  color: #666;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-btn:hover {
+  background: #e0e0e0;
+}
+
+@media (max-width: 640px) {
+  .product-search {
+    padding: 16px;
   }
-  
-  .filters-section h3 {
-    grid-column: span 2;
+
+  .sort-section {
+    flex-direction: column;
+    align-items: stretch;
   }
-  
-  .reset-button {
-    grid-column: span 2;
+
+  .sort-controls {
+    width: 100%;
+  }
+
+  .sort-select {
+    flex-grow: 1;
+  }
+
+  .reset-btn {
+    width: 100%;
   }
 }
 </style>

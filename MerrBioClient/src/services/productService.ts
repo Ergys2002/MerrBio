@@ -1,13 +1,22 @@
+// Product interfaces
+export interface Product {
+  id: string | number;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+}
+
 /**
  * Fetches product details by ID. Simulates an API call.
- * @param {string|number} id - The ID of the product to fetch.
- * @returns {Promise<object>} A promise that resolves with the product details.
+ * @param id - The ID of the product to fetch.
+ * @returns A promise that resolves with the product details.
  */
-export const getProductById = (id) => {
+export const getProductById = (id: string | number): Promise<Product> => {
   return new Promise((resolve) => {
     // Simulate network delay
     setTimeout(() => {
-      const product = {
+      const product: Product = {
         id: id,
         name: 'Sample Product',
         description: 'This is a detailed description of the sample product.',

@@ -3,157 +3,175 @@
  * ProductsView displays the products page with search, filters, and product listings
  * @component
  */
-import { onMounted, ref, computed } from 'vue';
-import { useProductStore } from '../stores/productStore';
-import { useI18n } from 'vue-i18n';
-import type { FilterOptions } from '../stores/productStore';
-
-import ProductSearch from '../components/products/ProductSearch.vue';
-import ProductList from '../components/products/ProductList.vue';
+import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useProductStore } from '@/stores/productStore'
+import type { FilterOptions, SortOption } from '@/stores/productStore'
+import ProductSearch from '@/components/products/ProductSearch.vue'
+import ProductList from '@/components/products/ProductList.vue'
 
 // Initialize i18n
-const { t } = useI18n();
+const { t } = useI18n()
 
-// Initialize the product store
-const productStore = useProductStore();
+// Initialize store
+const productStore = useProductStore()
 
-// Get computed properties from the store
-const loading = computed(() => productStore.loading);
-const products = computed(() => productStore.paginatedProducts);
-const totalPages = computed(() => productStore.totalPages);
-const currentPage = computed(() => productStore.currentPage);
-const filteredProductsCount = computed(() => productStore.filteredProducts.length);
+// Computed properties from store
+const loading = computed(() => productStore.loading)
+const error = computed(() => productStore.error)
+const products = computed(() => productStore.paginatedProducts)
+const totalPages = computed(() => productStore.totalPages)
+const currentPage = computed(() => productStore.currentPage)
+const filteredProductsCount = computed(() => productStore.filteredProducts.length)
 
-// Fetch products on component mount
-onMounted(async () => {
-  await productStore.fetchProducts();
-});
+// Page control methods
+const goToPage = (page: number) => productStore.setPage(page)
+const nextPage = () => productStore.nextPage()
+const prevPage = () => productStore.prevPage()
 
-// Handle filter updates
-const updateFilters = (filters: FilterOptions) => {
-  productStore.updateFilters(filters);
-};
+// Filter and sort handlers
+const handleFilterUpdate = (filters: FilterOptions) => {
+  productStore.updateFilters(filters)
+}
 
-// Pagination methods
-const nextPage = () => productStore.nextPage();
-const prevPage = () => productStore.prevPage();
-const goToPage = (page: number) => productStore.setPage(page);
+const handleSortUpdate = (sort: SortOption) => {
+  productStore.updateSort(sort)
+}
 
-// Generate array of page numbers for pagination
+// Generate page numbers for pagination
 const paginationPages = computed(() => {
-  const pages: (number | string)[] = [];
-  const maxPagesToShow = 5;
+  const pages: (number | string)[] = []
+  const maxPagesToShow = 5
   
   if (totalPages.value <= maxPagesToShow) {
-    // If we have less than or equal to maxPagesToShow pages, show them all
     for (let i = 1; i <= totalPages.value; i++) {
-      pages.push(i);
+      pages.push(i)
     }
   } else {
-    // Otherwise show a window of pages around current page
-    const halfWindow = Math.floor(maxPagesToShow / 2);
-    let startPage = currentPage.value - halfWindow;
-    let endPage = currentPage.value + halfWindow;
+    const halfWindow = Math.floor(maxPagesToShow / 2)
+    let startPage = currentPage.value - halfWindow
+    let endPage = currentPage.value + halfWindow
     
-    // Adjust if window is outside of valid range
     if (startPage < 1) {
-      endPage += (1 - startPage);
-      startPage = 1;
+      endPage += (1 - startPage)
+      startPage = 1
     }
-      if (endPage > totalPages.value) {
-      startPage -= (endPage - totalPages.value);
-      endPage = totalPages.value;
-    }
-    
-    // Ensure startPage is never less than 1
-    startPage = Math.max(1, startPage);
-    
-    for (let i = startPage; i <= Math.min(endPage, totalPages.value); i++) {
-      pages.push(i);
+    if (endPage > totalPages.value) {
+      startPage -= (endPage - totalPages.value)
+      endPage = totalPages.value
     }
     
-    // Add first page indicator if needed
+    startPage = Math.max(1, startPage)
+    
     if (startPage > 1) {
-      pages.unshift(1);
-      if (startPage > 2) pages.splice(1, 0, '...');
+      pages.push(1)
+      if (startPage > 2) pages.push('...')
     }
     
-    // Add last page indicator if needed
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i)
+    }
+    
     if (endPage < totalPages.value) {
-      if (endPage < totalPages.value - 1) pages.push('...');
-      pages.push(totalPages.value);
+      if (endPage < totalPages.value - 1) pages.push('...')
+      pages.push(totalPages.value)
     }
   }
   
-  return pages;
-});
+  return pages
+})
+
+// Retry loading if there was an error
+const retryLoading = () => {
+  productStore.fetchProducts()
+}
+
+// Fetch products on mount
+onMounted(() => {
+  productStore.fetchProducts()
+})
 </script>
 
 <template>
   <div class="products-view">
     <div class="container">
-      <!-- Page header -->
+      <!-- Page Header -->
       <div class="page-header">
         <h1>{{ t('products.title') }}</h1>
-        <p>{{ t('products.productDescription') }}</p>
+        <p>{{ t('products.description') }}</p>
       </div>
-      
-      <div class="products-content">
+
+      <!-- Main Content Grid -->
+      <div class="content-grid">
         <!-- Sidebar with filters -->
-        <div class="sidebar">
-          <ProductSearch @update:filters="updateFilters" />
-        </div>
-        
+        <aside class="sidebar">
+          <ProductSearch
+            @update:filters="handleFilterUpdate"
+            @update:sort="handleSortUpdate"
+          />
+        </aside>
+
         <!-- Main content area -->
-        <div class="main-content">          <!-- Results summary -->
+        <main class="main-content">
+          <!-- Results Summary -->
           <div v-if="!loading" class="results-summary">
-            <p>
-              <span v-if="filteredProductsCount === 1">
-                {{ t('products.oneProductFound') }}
-              </span>
-              <span v-else>
-                {{ filteredProductsCount }} {{ t('products.multipleProductsFound') }}
-              </span>
+            <p v-if="filteredProductsCount === 0">
+              {{ t('products.noResults') }}
+            </p>
+            <p v-else-if="filteredProductsCount === 1">
+              {{ t('products.oneResult') }}
+            </p>
+            <p v-else>
+              {{ filteredProductsCount }} {{ t('products.multipleResults') }}
             </p>
           </div>
-          
-          <!-- Product listing -->
-          <ProductList :products="products" :loading="loading" />
-          
+
+          <!-- Product List -->
+          <ProductList
+            :products="products"
+            :loading="loading"
+            :error="error"
+            @retry="retryLoading"
+          />
+
           <!-- Pagination -->
-          <div v-if="totalPages > 1 && !loading" class="pagination">            <button 
-              class="pagination-button" 
-              @click="prevPage" 
+          <div v-if="totalPages > 1 && !loading" class="pagination">
+            <!-- Previous Page -->
+            <button
+              class="pagination-btn prev"
               :disabled="currentPage === 1"
+              @click="prevPage"
             >
-              &laquo; {{ t('common.prev') }}
+              ←
             </button>
-            
+
+            <!-- Page Numbers -->
             <div class="page-numbers">
               <button
                 v-for="page in paginationPages"
                 :key="page"
-                :class="[
-                  'page-number', 
-                  page === currentPage ? 'active' : '',
-                  page === '...' ? 'ellipsis' : ''
-                ]"
+                class="page-number"
+                :class="{
+                  active: page === currentPage,
+                  disabled: page === '...'
+                }"
                 @click="page !== '...' && goToPage(Number(page))"
                 :disabled="page === '...'"
               >
                 {{ page }}
               </button>
             </div>
-            
-            <button 
-              class="pagination-button" 
-              @click="nextPage" 
+
+            <!-- Next Page -->
+            <button
+              class="pagination-btn next"
               :disabled="currentPage === totalPages"
+              @click="nextPage"
             >
-              {{ t('common.next') }} &raquo;
+              →
             </button>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   </div>
@@ -162,125 +180,144 @@ const paginationPages = computed(() => {
 <style scoped>
 .products-view {
   padding: 40px 0;
+  min-height: 100vh;
+  background-color: #f9fafb;
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
 .page-header {
-  margin-bottom: 32px;
   text-align: center;
+  margin-bottom: 40px;
 }
 
 .page-header h1 {
-  font-size: 2rem;
-  color: #333;
-  margin-bottom: 8px;
+  font-size: 2.5rem;
+  color: #1a1a1a;
+  margin-bottom: 12px;
 }
 
 .page-header p {
-  color: #666;
   font-size: 1.1rem;
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-.products-content {
+.content-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
+  gap: 32px;
+  grid-template-columns: 300px 1fr;
+  align-items: start;
+}
+
+.sidebar {
+  position: sticky;
+  top: 24px;
 }
 
 .results-summary {
-  margin-bottom: 16px;
-  font-size: 0.95rem;
+  margin-bottom: 24px;
   color: #666;
 }
 
 .pagination {
+  margin-top: 40px;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 32px;
-  gap: 8px;
+  gap: 12px;
 }
 
-.pagination-button {
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  background-color: #fff;
-  border-radius: 4px;
+.pagination-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  color: #666;
+  font-size: 1.2rem;
   cursor: pointer;
-  color: #333;
-  font-size: 0.9rem;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
-.pagination-button:hover:not(:disabled) {
+.pagination-btn:hover:not(:disabled) {
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.pagination-btn:disabled {
   background-color: #f5f5f5;
-  border-color: #ccc;
-}
-
-.pagination-button:disabled {
   color: #ccc;
   cursor: not-allowed;
 }
 
 .page-numbers {
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
 .page-number {
-  width: 36px;
-  height: 36px;
+  min-width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #ddd;
-  background-color: #fff;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #333;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  color: #666;
   font-size: 0.9rem;
-  transition: all 0.3s;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .page-number:hover:not(:disabled):not(.active) {
-  background-color: #f5f5f5;
-  border-color: #ccc;
+  border-color: #4caf50;
+  color: #4caf50;
 }
 
 .page-number.active {
-  background-color: #4caf50;
-  color: white;
+  background: #4caf50;
   border-color: #4caf50;
+  color: white;
   cursor: default;
 }
 
-.page-number.ellipsis {
+.page-number.disabled {
   border: none;
   cursor: default;
 }
 
-.page-number:disabled {
-  cursor: default;
-}
-
-@media (min-width: 768px) {
-  .products-content {
-    grid-template-columns: 280px 1fr;
+@media (max-width: 1024px) {
+  .content-grid {
+    grid-template-columns: 260px 1fr;
+    gap: 24px;
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
   .sidebar {
-    order: 1;
+    position: static;
   }
-  
-  .main-content {
-    order: 2;
+
+  .page-header h1 {
+    font-size: 2rem;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
   }
 }
 </style>
