@@ -47,16 +47,37 @@ const router = createRouter({
   routes
 })
 
-// Route guard placeholder for protected routes
-router.beforeEach((to, from, next) => {
-  // This will be implemented later with proper authentication
-  // For now, let's just allow access to all routes
+import { useAuthStore } from '../stores/authStore'
+
+// Route guard for protected routes
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+  
   if (to.meta.requiresAuth) {
-    // Check authentication status here later
-    next() // For now, just proceed
-  } else {
-    next()
+    if (!authStore.isLoggedIn) {
+      next('/auth')
+      return
+    }
+
+    // Only fetch profile when accessing protected routes and profile not already loaded
+    if (!authStore.user) {
+      try {
+        await authStore.fetchUserProfile()
+        
+        // Check role-based access
+        if (to.meta.role && authStore.userRole !== to.meta.role) {
+          next('/')
+          return
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error)
+        authStore.clearAuthData()
+        next('/auth')
+        return
+      }
+    }
   }
+  next()
 })
 
 export default router

@@ -243,6 +243,63 @@
       "orderStatusNotifications": "Njoftime për Statusin e Porosisë",
       "recommendedProducts": "Produkte të Rekomanduara",
       "basedOnHistory": "Bazuar në Historinë Tuaj"
+    },
+    "admin": {
+      "title": "Mirë se vini në panelin tuaj, Admin",
+      "users": "Përdoruesit",
+      "products": "Produktet",
+      "categories": "Kategoritë",
+      "stats": "Statistika",
+      "manageUsers": "Menaxho Përdoruesit",
+      "searchUsers": "Kërko përdorues...",
+      "allRoles": "Të Gjitha Rolet",
+      "sortByName": "Rendit sipas Emrit",
+      "sortByEmail": "Rendit sipas Email-it",
+      "sortByDate": "Rendit sipas Datës",
+      "userName": "Emri",
+      "email": "Email",
+      "role": "Roli",
+      "registrationDate": "Data e Regjistrimit",
+      "status": "Statusi",
+      "actions": "Veprimet",
+      "deactivate": "Çaktivizo Përdoruesin",
+      "activate": "Aktivizo Përdoruesin",
+      "delete": "Fshi Përdoruesin",
+      "confirmDeleteUser": "Jeni të sigurt që doni të fshini këtë përdorues?",
+      "userDeleted": "Përdoruesi u fshi me sukses",
+      "deleteUserFailed": "Fshirja e përdoruesit dështoi",
+      "updateStatusFailed": "Përditësimi i statusit dështoi",
+      "manageProducts": "Menaxho Produktet",
+      "searchProducts": "Kërko produkte...",
+      "allCategories": "Të Gjitha Kategoritë",
+      "sortByPrice": "Rendit sipas Çmimit",
+      "view": "Shiko Produktin",
+      "confirmDeleteProduct": "Jeni të sigurt që doni të fshini këtë produkt?",
+      "productDeleted": "Produkti u fshi me sukses",
+      "deleteProductFailed": "Fshirja e produktit dështoi",
+      "manageCategories": "Menaxho Kategoritë",
+      "searchCategories": "Kërko kategori...",
+      "addCategory": "Shto Kategori",
+      "categoryName": "Emri i Kategorisë",
+      "description": "Përshkrimi",
+      "createdAt": "Krijuar më",
+      "confirmDeleteCategory": "Jeni të sigurt që doni të fshini këtë kategori?",
+      "categoryDeleted": "Kategoria u fshi me sukses",
+      "deleteCategoryFailed": "Fshirja e kategorisë dështoi",
+      "categoryCreated": "Kategoria u krijua me sukses",
+      "createCategoryFailed": "Krijimi i kategorisë dështoi",
+      "noUsersFound": "Nuk u gjetën përdorues",
+      "noProductsFound": "Nuk u gjetën produkte",
+      "noCategoriesFound": "Nuk u gjetën kategori",
+      "platformStatistics": "Statistikat e Platformës",
+      "totalUsers": "Totali i Përdoruesve",
+      "registeredUsers": "Përdorues të regjistruar në platformë",
+      "totalProducts": "Totali i Produkteve",
+      "listedProducts": "Produkte të listuara në platformë",
+      "totalCategories": "Totali i Kategorive",
+      "productCategories": "Kategoritë e produkteve",
+      "activeFarmers": "Fermerë Aktivë",
+      "farmersOnPlatform": "Fermerë që përdorin aktivisht platformën"
     }
   },
   "profile": {
@@ -289,5 +346,14 @@
       "rejected": "E refuzuar",
       "completed": "E përfunduar"
     }
+  },
+  "roles": {
+    "admin": "Administrator",
+    "farmer": "Fermer",
+    "consumer": "Konsumator"
+  },
+  "status": {
+    "active": "Aktiv",
+    "inactive": "Joaktiv"
   }
 }
