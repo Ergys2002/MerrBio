@@ -76,18 +76,8 @@ const handleSubmit = async () => {
     
     // Emit success event
     emit('login-success');
-    
-    // Redirect based on user role
-    const role = authStore.userRole;
-    if (role === 'FARMER') {
-      router.push('/dashboard/farmer');
-    } else if (role === 'CONSUMER') {
-      router.push('/dashboard/consumer');
-    } else if (role === 'ADMIN') {
-      router.push('/dashboard/admin');
-    } else {
-      router.push('/');
-    }
+      // Redirect to home page after successful login
+    router.push('/');
   } catch (error: any) {
     // Use error message from store/service if available
     errors.form = error?.message || 'Login failed. Please check your credentials.';

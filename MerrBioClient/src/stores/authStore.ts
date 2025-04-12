@@ -58,8 +58,7 @@ export const useAuthStore = defineStore('auth', {
     /**
      * Fetch user profile from the backend using the access token.
      * Assumes a GET /users/me endpoint exists. Adjust if necessary.
-     */
-    async fetchUserProfile(): Promise<void> {
+     */    async fetchUserProfile(): Promise<void> {
       if (!this.accessToken) {
         console.warn('No access token available to fetch user profile.');
         this.$patch({ user: null, isAuthenticated: false });
@@ -68,14 +67,20 @@ export const useAuthStore = defineStore('auth', {
       this.$patch({ loading: true, error: null });
       try {
         // Ensure the Authorization header is set for this request
-        // Note: The interceptor in api.js should handle this, but being explicit can help debugging
-        const response = await apiClient.get<UserProfile>('/users/me', {
-           headers: { Authorization: `Bearer ${this.accessToken}` }
+        const response = await apiClient.get<UserProfile>('/users/me');
+        if (!response.data) {
+          throw new Error('No profile data received');
+        }
+        this.$patch({ 
+          user: response.data, 
+          isAuthenticated: true, 
+          loading: false,
+          error: null
         });
-        this.$patch({ user: response.data, isAuthenticated: true, loading: false });
       } catch (error: any) {
-        console.error('Failed to fetch user profile:', error.response?.data || error.message);
-        // If fetching user fails (e.g., token expired, user deleted), treat as logged out
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch user profile';
+        console.error('Profile fetch error:', errorMessage);
+        this.$patch({ error: errorMessage, loading: false });
         this.clearAuthData();
         this.$patch({ error: 'Failed to fetch user details.', loading: false });
         // Optionally re-throw or handle differently
@@ -117,17 +122,14 @@ export const useAuthStore = defineStore('auth', {
       }
       // Remove auth header from apiClient defaults
       delete apiClient.defaults.headers.common['Authorization'];
-    },
-
-    /**
+    },    /**
      * Login user using the authService.
-     */
-    async login(credentials: { email: string; password: string }): Promise<void> {
+     */    async login(credentials: { email: string; password: string }): Promise<void> {
       this.$patch({ loading: true, error: null });
       try {
         const data = await authService.login(credentials);
         this.setAuthData(data.accessToken, data.refreshToken);
-        // Fetch user profile after successful login
+        // Fetch user profile immediately after login to get role information
         await this.fetchUserProfile();
       } catch (error: any) {
         console.error('Store login failed:', error);
