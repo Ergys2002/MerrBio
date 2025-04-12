@@ -39,8 +39,7 @@
         "farmer": "Sunshine Greens"
       }
     }
-  },
-  "common": {
+  },  "common": {
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
@@ -52,7 +51,9 @@
     "loading": "Loading...",
     "error": "An error occurred",
     "success": "Success",
-    "language": "Language"
+    "language": "Language",
+    "prev": "Prev",
+    "next": "Next"
   },
   "products": {
     "title": "Products",

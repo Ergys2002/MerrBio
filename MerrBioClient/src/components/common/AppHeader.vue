@@ -12,8 +12,11 @@ const { t } = useI18n();
       <div class="header-content">
         <div class="logo">
           <router-link to="/">
-            <h1>{{ t('app.name') }}</h1>
-            <span class="tagline">{{ t('app.tagline') }}</span>
+            <img 
+              src="@/assets/header_logo.png" 
+              alt="MerrBio Logo"
+              class="logo-image"
+            >
           </router-link>
         </div>
         
@@ -90,6 +93,18 @@ const { t } = useI18n();
   
   .header-right {
     gap: 16px;
+  }
+}
+
+.logo-image {
+  height: 40px; /* Base height */
+  width: auto; /* Maintain aspect ratio */
+  max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  .logo-image {
+    height: 30px; /* Smaller on mobile */
   }
 }
 </style>
