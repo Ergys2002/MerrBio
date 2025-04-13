@@ -51,12 +51,21 @@ onMounted(async () => {
     loading.value = false
     return
   }
-
   try {
     // Fetch product directly from API using ProductService
     const productData = await ProductService.getProductById(productId)
     if (productData) {
-      product.value = productData
+      // Format image URLs correctly to include the complete API path
+      const API_BASE_URL = 'http://localhost:8080/api/v1'
+      
+      // Create a copy of the product data with corrected image URLs
+      const formattedProduct = {
+        ...productData,
+        thumbnailUrl: productData.thumbnailUrl ? `${API_BASE_URL}${productData.thumbnailUrl}` : null,
+        imageUrls: (productData.imageUrls || []).map(url => `${API_BASE_URL}${url}`)
+      }
+      
+      product.value = formattedProduct
       // Set initial quantity to minimum order quantity or 1 if not available
       quantity.value = productData.minimumOrderQuantity || 1
     } else {

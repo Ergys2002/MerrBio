@@ -135,13 +135,14 @@ onMounted(() => {
       if (productResponse && productResponse.content && Array.isArray(productResponse.content)) {
         // API base URL for image paths
         const API_BASE_URL = 'http://localhost:8080/api/v1';
-        
-        featuredProducts.value = productResponse.content.map(product => ({
+          featuredProducts.value = productResponse.content.map(product => ({
         id: product.id,
         name: product.name,
         description: product.description,
-        image: product.thumbnailUrl ? API_BASE_URL + product.thumbnailUrl : 'https://placehold.co/600x400?text=No+Image',
-        imageUrls: (product.imageUrls || []).map(url => API_BASE_URL + url),
+        // Format thumbnail URL correctly to point to the API image endpoint
+        image: product.thumbnailUrl ? `http://localhost:8080/api/v1${product.thumbnailUrl}` : 'https://placehold.co/600x400?text=No+Image',
+        // Format all image URLs correctly using the API image endpoint
+        imageUrls: (product.imageUrls || []).map(url => `http://localhost:8080/api/v1${url}`),
         price: product.price,
         unit: product.unit ? product.unit.toLowerCase() : 'unit',
         farmer: product.farmerName || 'Unknown Farmer',
