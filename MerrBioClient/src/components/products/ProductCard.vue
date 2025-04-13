@@ -26,13 +26,27 @@ const requestToBuy = () => {
   requestStore.addRequest(props.product.id, props.product.minOrderQuantity)
   // You could add a toast notification here in the future
 }
+// Computed property for the image URL, handling fallbacks
+const displayImageUrl = computed(() => {
+ // Use thumbnail if available
+ if (props.product.thumbnailUrl) {
+   return props.product.thumbnailUrl;
+ }
+ // Fallback to the first image in imageUrls if available
+ if (props.product.imageUrls && props.product.imageUrls.length > 0) {
+   return props.product.imageUrls[0];
+ }
+ // Fallback to a placeholder if no images are available
+ // Ensure you have a placeholder image at this path in your public folder
+ return '/images/placeholder-product.png';
+});
 
 const formattedPrice = computed(() => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(props.product.price)
-})
+ return new Intl.NumberFormat('en-US', {
+   style: 'currency',
+   currency: 'EUR' // Assuming EUR, adjust if needed
+ }).format(props.product.price);
+});
 </script>
 
 <template>
@@ -50,7 +64,7 @@ const formattedPrice = computed(() => {
     <!-- Product image -->
     <div class="image-container" @click="viewProductDetails">
       <img 
-        :src="product.thumbnailUrl" 
+        :src="displayImageUrl"
         :alt="product.name"
         class="product-image"
       />
@@ -69,11 +83,11 @@ const formattedPrice = computed(() => {
 
       <div class="categories">
         <span 
-          v-for="category in product.categories" 
-          :key="category" 
+          v-for="category in product.categories"
+          :key="category.id"
           class="category-tag"
         >
-          {{ category }}
+          {{ category.name }}
         </span>
       </div>
 

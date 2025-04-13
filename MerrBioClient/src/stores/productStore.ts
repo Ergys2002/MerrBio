@@ -165,9 +165,14 @@ export const useProductStore = defineStore('product', () => {
     error.value = null;
     
     try {
-      // For now use mock data, replace with API call when ready
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      products.value = mockProducts;
+      // Fetch products from the service
+      const fetchedProducts = await ProductService.getAllProducts();
+      // Ensure categories is always an array for each product (similar to fetchFarmerProducts)
+      const normalizedProducts = fetchedProducts.map(product => ({
+        ...product,
+        categories: product.categories || []
+      }));
+      products.value = normalizedProducts;
     } catch (err: any) {
       console.error('Error fetching products:', err);
       error.value = 'Failed to load products';
