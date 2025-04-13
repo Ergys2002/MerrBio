@@ -7,8 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -126,9 +126,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-
-
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> validationErrors = new HashMap<>();
@@ -145,5 +142,27 @@ public class GlobalExceptionHandler {
                 .validationErrors(validationErrors)
                 .build();
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ImageModerationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorResponse> handleImageModerationException(ImageModerationException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .message("Image moderation failed: " + ex.getMessage())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .timestamp(Instant.now())
+                .build();
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @ExceptionHandler(InappropriateContentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorResponse> handleInappropriateContentException(InappropriateContentException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .message("Inappropriate content detected: " + ex.getMessage())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .timestamp(Instant.now())
+                .build();
+        return ResponseEntity.badRequest().body(errorResponse);
     }
 }

@@ -33,4 +33,5 @@ public interface FarmerRepository extends JpaRepository<Farmer, UUID> {
 
     List<Farmer> findByFarmNameContainingIgnoreCase(String farmName);
 
+    Farmer findByUserEmail(String currentUserEmail);
 }

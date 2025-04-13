@@ -1,5 +1,6 @@
 package com.app.merrbioapi.service;
 
+import com.app.merrbioapi.exception.InappropriateContentException;
 import com.app.merrbioapi.model.dto.request.ProductCreateMultipartRequest;
 import com.app.merrbioapi.model.dto.request.ProductCreateRequest;
 import com.app.merrbioapi.model.dto.request.ProductSearchRequest;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,31 +44,42 @@ public class ProductService {
     private final FarmerRepository farmerRepository;
     private final ImageRepository imageRepository;
     private final FileService fileService;
+    private final ImageModerationService imageModerationService;
 
     @Transactional
     public UUID createProductWithImages(ProductCreateMultipartRequest request) {
-        // Get current user (farmer)
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Farmer farmer = farmerRepository.findByUserId(currentUser.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Farmer not found for current user"));
+        // Get the authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserEmail = authentication.getName();
 
-        // Store thumbnail if provided
+        // Find the farmer associated with the authenticated user
+        Farmer farmer = farmerRepository.findByUserEmail(currentUserEmail);
+        if (farmer == null) {
+            throw new IllegalArgumentException("No farmer profile found for the current user");
+        }
+
+        // Process thumbnail image if provided
         String thumbnailUrl = null;
         if (request.getThumbnail() != null && !request.getThumbnail().isEmpty()) {
+            // Check for inappropriate content in thumbnail
+            if (!imageModerationService.isSafeImage(request.getThumbnail())) {
+                throw new InappropriateContentException("The thumbnail image contains inappropriate content");
+            }
+
             thumbnailUrl = fileService.storeFile(request.getThumbnail());
         }
 
-        // Create the product
+        // Create the product entity
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
-                .farmer(farmer)
                 .price(request.getPrice())
                 .unit(request.getUnit())
                 .minAvailableQuantity(request.getMinAvailableQuantity())
                 .maxAvailableQuantity(request.getMaxAvailableQuantity())
                 .minimumOrderQuantity(request.getMinimumOrderQuantity())
                 .isOrganic(request.getIsOrganic())
+                .farmer(farmer)
                 .isInStock(true)
                 .thumbnailUrl(thumbnailUrl)
                 .category(new ArrayList<>())
@@ -92,6 +105,14 @@ public class ProductService {
         if (request.getImages() != null && !request.getImages().isEmpty()) {
             for (MultipartFile imageFile : request.getImages()) {
                 if (imageFile != null && !imageFile.isEmpty()) {
+                    // Check each image for inappropriate content
+                    if (!imageModerationService.isSafeImage(imageFile)) {
+                        // If inappropriate content is found, delete the product we just created
+                        // and its associated resources
+                        deleteProduct(savedProduct.getId());
+                        throw new InappropriateContentException("One or more images contain inappropriate content");
+                    }
+
                     String imageUrl = fileService.storeFile(imageFile);
                     if (imageUrl != null) {
                         Image image = Image.builder()
@@ -104,9 +125,7 @@ public class ProductService {
                     }
                 }
             }
-
         }
-
 
         return savedProduct.getId();
     }
@@ -226,10 +245,10 @@ public class ProductService {
         }
 
         // Consider deleting associated files (thumbnail, images) from storage
-        if(product.getThumbnailUrl() != null) {
+        if (product.getThumbnailUrl() != null) {
             // fileService.deleteFile(product.getThumbnailUrl()); // Assuming FileService has a delete method
         }
-        if(product.getImageUrls() != null) {
+        if (product.getImageUrls() != null) {
             product.getImageUrls().forEach(image -> {
                 // fileService.deleteFile(image.getImageUrl());
             });
@@ -241,6 +260,7 @@ public class ProductService {
 
         productRepository.delete(product);
     }
+
     @Transactional(readOnly = true)
     public List<ProductResponse> searchProducts(String keyword) {
         return productRepository.searchProducts(keyword).stream()
@@ -346,6 +366,4 @@ public class ProductService {
 
         return Sort.by(direction, sortBy);
     }
-
-
 }
