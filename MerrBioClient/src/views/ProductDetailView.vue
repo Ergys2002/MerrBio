@@ -7,26 +7,27 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useProductStore } from '@/stores/productStore'
-import { useRequestStore } from '@/stores/requestStore'
+import { useAuthStore } from '@/stores/authStore' // Added
 import { ProductService } from '@/services/productService'
+import { OrderService } from '@/services/orderService' // Added
 import type { Product } from '@/stores/productStore'
+import type { OrderCreatePayload } from '@/types/orderTypes' // Added
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const productStore = useProductStore()
-const requestStore = useRequestStore()
+const authStore = useAuthStore() // Added
 
 const product = ref<Product | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selectedImageIndex = ref(0)
 const quantity = ref(0)
-const message = ref('')
-
-const hasActiveRequest = computed(() => 
-  product.value && requestStore.hasRequest(product.value.id)
-)
+const message = ref('') // Will be used as 'notes' for the order
+const orderSubmitting = ref(false) // Added
+const orderError = ref<string | null>(null) // Added
+const orderSuccessMessage = ref<string | null>(null) // Added
 
 const formattedPrice = computed(() => {
   if (!product.value) return ''
@@ -79,12 +80,55 @@ onMounted(async () => {
   }
 })
 
-const submitPurchaseRequest = () => {
-  if (!product.value) return
+const placeOrder = async () => {
+  if (!product.value || orderSubmitting.value) return
 
-  requestStore.addRequest(product.value.id, quantity.value, message.value)
-  // You could add a success toast notification here in the future
-  router.push('/dashboard/consumer/requests')
+  // 1. Check if user is logged in
+  if (!authStore.isLoggedIn) {
+    orderError.value = 'You must be logged in to place an order.'
+    // Optionally redirect to login after a delay or provide a login button
+    // router.push('/login');
+    return;
+  }
+
+  // 2. Reset state
+  orderSubmitting.value = true
+  orderError.value = null
+  orderSuccessMessage.value = null
+
+  // 3. Construct payload
+  const payload: OrderCreatePayload = {
+    items: [
+      {
+        productId: product.value.id,
+        quantity: quantity.value,
+      },
+    ],
+    notes: message.value || undefined, // Send notes only if provided
+  }
+
+  // 4. Call API
+  try {
+    const createdOrder = await OrderService.createOrder(payload)
+    console.log('Order created:', createdOrder)
+    orderSuccessMessage.value = `Order placed successfully! Order ID: ${createdOrder.id}`
+    
+    // Optionally clear form or disable button further
+    // quantity.value = product.value.minimumOrderQuantity || 1; // Reset quantity
+    // message.value = '';
+
+    // Redirect after a short delay
+    setTimeout(() => {
+      // Redirect to a dedicated order confirmation page or the consumer's order list
+      router.push('/dashboard/consumer/orders') // Assuming this route exists
+    }, 3000) // 3-second delay
+
+  } catch (err: any) {
+    console.error('Error placing order:', err)
+    orderError.value = err.message || 'Failed to place order. Please try again.'
+  } finally {
+    orderSubmitting.value = false
+  }
 }
 
 const goBack = () => {
@@ -159,8 +203,8 @@ const selectImage = (index: number) => {
 
           <div class="categories">
             <span 
-              v-for="category in product.categories" 
-              :key="category"
+              v-for="category in product.categories"
+              :key="category.id"
               class="category-tag"
             >
               {{ category }}
@@ -187,9 +231,9 @@ const selectImage = (index: number) => {
 
           <!-- Purchase Request Form -->
           <form 
-            v-if="product.isInStock && !hasActiveRequest" 
-            class="request-form"
-            @submit.prevent="submitPurchaseRequest"
+            v-if="product.isInStock"
+            class="order-form"
+            @submit.prevent="placeOrder"
           >
             <div class="form-group">
               <label for="quantity">Quantity ({{ product.unit }})</label>
@@ -238,28 +282,28 @@ const selectImage = (index: number) => {
               <span class="total-price">{{ totalPrice }}</span>
             </div>
 
-            <button 
-              type="submit" 
+            <!-- Order Submission Status -->
+            <div v-if="orderSubmitting" class="form-status submitting">
+              Placing your order... <span class="spinner small"></span>
+            </div>
+            <div v-if="orderError" class="form-status error">
+              {{ orderError }}
+            </div>
+             <div v-if="orderSuccessMessage" class="form-status success">
+              {{ orderSuccessMessage }}
+            </div>
+
+            <button
+              type="submit"
               class="btn primary submit-btn"
-              :disabled="quantity < product.minOrderQuantity"
+              :disabled="quantity < product.minOrderQuantity || orderSubmitting || !!orderSuccessMessage"
             >
-              Submit Purchase Request
+              {{ orderSubmitting ? 'Placing Order...' : (orderSuccessMessage ? 'Order Placed!' : 'Place Order') }}
             </button>
           </form>
 
           <!-- Already Requested Message -->
-          <div v-else-if="hasActiveRequest" class="request-status">
-            <p>
-              You have already submitted a purchase request for this product.
-              Check your dashboard to view the status.
-            </p>
-            <button 
-              class="btn secondary"
-              @click="router.push('/dashboard/consumer/requests')"
-            >
-              View My Requests
-            </button>
-          </div>
+          <!-- Removed hasActiveRequest block -->
 
           <!-- Out of Stock Message -->
           <div v-else class="out-of-stock-message">
@@ -494,7 +538,7 @@ const selectImage = (index: number) => {
 }
 
 /* Request Form */
-.request-form {
+.order-form {
   border-top: 1px solid #e0e0e0;
   padding-top: 32px;
 }
@@ -588,6 +632,42 @@ textarea {
   color: #4caf50;
 }
 
+/* Form Status Messages */
+.form-status {
+  padding: 12px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.form-status.submitting {
+  background-color: #e3f2fd;
+  color: #1e88e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.form-status.error {
+  background-color: #ffebee;
+  color: #f44336;
+}
+
+.form-status.success {
+  background-color: #e8f5e9;
+  color: #4caf50;
+}
+
+.spinner.small {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  border-top-color: #1e88e5; /* Match submitting text color */
+  margin: 0; /* Reset margin if needed */
+}
+
 .btn {
   padding: 12px 24px;
   border: none;
@@ -622,7 +702,7 @@ textarea {
   background-color: #e0e0e0;
 }
 
-.request-status,
+/* Removed .request-status styles */
 .out-of-stock-message {
   text-align: center;
   padding: 32px;
@@ -630,7 +710,6 @@ textarea {
   border-radius: 8px;
 }
 
-.request-status p,
 .out-of-stock-message p {
   margin-bottom: 16px;
   color: #666;

@@ -24,7 +24,7 @@ export interface Product {
   minOrderQuantity: number
   categories: Array<{id: string, name: string, description: string}> // Updated to match backend
   imageUrls: string[]
-  thumbnailUrl: string
+  thumbnailUrl: string | null // Can be null if no thumbnail is set
   farmerId: string
   farmerName: string
   farmLocation: string
