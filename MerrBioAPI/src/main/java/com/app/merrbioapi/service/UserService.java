@@ -10,6 +10,11 @@ import com.app.merrbioapi.repository.UserInfoRepository;
 import com.app.merrbioapi.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException; // Or use custom exception
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +58,35 @@ public class UserService {
         }
 
         return profileBuilder.build();
+    }
+
+    public Page<UserProfileResponse> getUsers(Integer page, Integer size, String search) {
+        // Apply default values if parameters are null
+        int pageNumber = page != null ? page : 0;
+        int pageSize = size != null ? size : 10;
+
+        // Default sort by createdAt in descending order (newest first)
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
+
+        Page<User> usersPage = userRepository.findBySearchTerm(search, pageable);
+
+        return usersPage.map(this::mapToUserProfileResponse);
+    }
+
+    private UserProfileResponse mapToUserProfileResponse(User user) {
+        // Implement mapping logic from User to UserProfileResponse
+        UserInfo userInfo = user.getUserInfo();
+        return UserProfileResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .firstName(userInfo.getFirstName())
+                .lastName(userInfo.getLastName())
+                .birthDate(userInfo.getBirthDate())
+                .phoneNumber(userInfo.getPhoneNumber())
+                .gender(userInfo.getGender())
+                .role(user.getRole())
+                .build();
     }
 
 }

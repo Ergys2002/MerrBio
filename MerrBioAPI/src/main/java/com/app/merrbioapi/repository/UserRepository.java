@@ -1,7 +1,6 @@
 package com.app.merrbioapi.repository;
 
 import com.app.merrbioapi.model.entity.User;
-import com.app.merrbioapi.model.enums.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,7 +14,9 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
     User findByEmail(String email);
     boolean existsByEmail(String email);
-
-    @Query("SELECT u FROM User u WHERE (:role IS NULL OR u.role = :role) AND (:email IS NULL OR u.email LIKE %:email%) AND u.role != 'ADMIN'")
-    Page<User> findUsersByFilters(@Param("role") Role role, @Param("email") String email, Pageable pageable);
+    @Query("SELECT u FROM User u JOIN u.userInfo ui WHERE " +
+            "(:search IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(ui.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(ui.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<User> findBySearchTerm(@Param("search") String search, Pageable pageable);
 }
