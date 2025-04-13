@@ -71,6 +71,7 @@ public class ProductController {
         @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @GetMapping("/{id}")
+    @PermitAll
     public ResponseEntity<ProductResponse> getProductById(
             @Parameter(description = "Product ID", required = true) @PathVariable("id") UUID productId) {
         ProductResponse product = productService.getProductById(productId);
