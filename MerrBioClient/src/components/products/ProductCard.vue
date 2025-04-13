@@ -28,16 +28,23 @@ const requestToBuy = () => {
 }
 // Computed property for the image URL, handling fallbacks
 const displayImageUrl = computed(() => {
+ const API_BASE_URL = 'http://localhost:8080/api/v1';
+ 
  // Use thumbnail if available
  if (props.product.thumbnailUrl) {
-   return props.product.thumbnailUrl;
+   // Check if the URL already contains the base URL
+   return props.product.thumbnailUrl.includes('http') 
+     ? props.product.thumbnailUrl 
+     : `${API_BASE_URL}${props.product.thumbnailUrl}`;
  }
  // Fallback to the first image in imageUrls if available
  if (props.product.imageUrls && props.product.imageUrls.length > 0) {
-   return props.product.imageUrls[0];
+   const imageUrl = props.product.imageUrls[0];
+   return imageUrl.includes('http') 
+     ? imageUrl 
+     : `${API_BASE_URL}${imageUrl}`;
  }
  // Fallback to a placeholder if no images are available
- // Ensure you have a placeholder image at this path in your public folder
  return '/images/placeholder-product.png';
 });
 
