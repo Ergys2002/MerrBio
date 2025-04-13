@@ -8,6 +8,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useProductStore } from '@/stores/productStore'
 import { useRequestStore } from '@/stores/requestStore'
+import { ProductService } from '@/services/productService'
 import type { Product } from '@/stores/productStore'
 
 const route = useRoute()
@@ -52,10 +53,12 @@ onMounted(async () => {
   }
 
   try {
-    const productData = await productStore.fetchProductById(productId)
+    // Fetch product directly from API using ProductService
+    const productData = await ProductService.getProductById(productId)
     if (productData) {
       product.value = productData
-      quantity.value = productData.minOrderQuantity
+      // Set initial quantity to minimum order quantity or 1 if not available
+      quantity.value = productData.minimumOrderQuantity || 1
     } else {
       error.value = 'Product not found'
     }

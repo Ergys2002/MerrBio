@@ -131,14 +131,17 @@ onMounted(() => {
       const productResponse = await ProductService.advancedSearch({ size: 6 });
       
       console.log('Products response:', productResponse);
-      
-      // Now correctly handle the response format with content array
+        // Now correctly handle the response format with content array
       if (productResponse && productResponse.content && Array.isArray(productResponse.content)) {
+        // API base URL for image paths
+        const API_BASE_URL = 'http://localhost:8080/api/v1';
+        
         featuredProducts.value = productResponse.content.map(product => ({
         id: product.id,
         name: product.name,
         description: product.description,
-        image: product.thumbnailUrl || 'https://placehold.co/600x400?text=No+Image',
+        image: product.thumbnailUrl ? API_BASE_URL + product.thumbnailUrl : 'https://placehold.co/600x400?text=No+Image',
+        imageUrls: (product.imageUrls || []).map(url => API_BASE_URL + url),
         price: product.price,
         unit: product.unit ? product.unit.toLowerCase() : 'unit',
         farmer: product.farmerName || 'Unknown Farmer',
