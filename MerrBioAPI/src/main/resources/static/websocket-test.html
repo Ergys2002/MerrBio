@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MerrBio WebSocket Chat Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stomp-websocket@2.3.4-next/lib/stomp.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .panel { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+        .messages { height: 300px; border: 1px solid #ccc; overflow-y: auto; padding: 10px; margin: 10px 0; }
+        .message { margin-bottom: 10px; padding: 8px; border-radius: 4px; }
+        .sent { background-color: #e6f7ff; text-align: right; }
+        .received { background-color: #f0f0f0; }
+        input, button, select { padding: 8px; margin: 5px; }
+        .input-group { margin-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        h2 { color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MerrBio WebSocket Chat Test</h1>
+        
+        <div class="panel">
+            <h2>Authentication</h2>
+            <div class="form-group">
+                <label for="token-input">JWT Token:</label>
+                <input type="text" id="token-input" placeholder="Enter your JWT token" style="width: 100%;">
+            </div>
+            <button id="connect-btn" onclick="connect()">Connect</button>
+            <button id="disconnect-btn" onclick="disconnect()" disabled>Disconnect</button>
+            <div id="connection-status">Disconnected</div>
+        </div>
+        
+        <div class="panel">
+            <h2>Create Conversation</h2>
+            <div class="form-group">
+                <label for="recipient-id">Recipient ID:</label>
+                <input type="text" id="recipient-id" placeholder="UUID of recipient user">
+            </div>
+            <div class="form-group">
+                <label for="product-id">Product ID (optional):</label>
+                <input type="text" id="product-id" placeholder="UUID of related product">
+            </div>
+            <div class="form-group">
+                <label for="initial-message">Initial Message:</label>
+                <input type="text" id="initial-message" placeholder="Type an initial message...">
+            </div>
+            <button onclick="createConversation()">Create Conversation</button>
+        </div>
+        
+        <div class="panel">
+            <h2>Chat</h2>
+            <div class="form-group">
+                <label for="conversation-select">Select Conversation:</label>
+                <select id="conversation-select" onchange="loadConversation()">
+                    <option value="">-- Select Conversation --</option>
+                </select>
+                <button onclick="loadConversations()">Refresh Conversations</button>
+            </div>
+            
+            <div class="messages" id="messages"></div>
+            
+            <div class="input-group">
+                <input type="text" id="message-input" placeholder="Type a message..." style="width: 80%;">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+            <button onclick="markAsRead()">Mark as Read</button>
+        </div>
+    </div>
+    
+    <script>
+        let stompClient = null;
+        let currentConversationId = null;
+        let token = "";
+        const apiBase = '/api/v1';
+        
+        function connect() {
+            token = document.getElementById('token-input').value.trim();
+            if (!token) {
+                alert("Please enter a JWT token");
+                return;
+            }
+            
+            document.getElementById('connection-status').textContent = 'Connecting...';
+            
+            // Connect to WebSocket with token
+            const socket = new SockJS(`${apiBase}/ws?token=${token}`);
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null; // Disable debug logs
+            
+            stompClient.connect({}, function(frame) {
+                document.getElementById('connection-status').textContent = 'Connected: ' + frame;
+                document.getElementById('connect-btn').disabled = true;
+                document.getElementById('disconnect-btn').disabled = false;
+                
+                // Subscribe to receive personal messages
+                stompClient.subscribe('/user/queue/messages', function(message) {
+                    const chatMessage = JSON.parse(message.body);
+                    displayMessage(chatMessage, false);
+                });
+                
+                // Load conversations after successful connection
+                loadConversations();
+            }, function(error) {
+                document.getElementById('connection-status').textContent = 'Error: ' + error;
+                console.error('Connection error:', error);
+            });
+        }
+        
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+                stompClient = null;
+                document.getElementById('connection-status').textContent = 'Disconnected';
+                document.getElementById('connect-btn').disabled = false;
+                document.getElementById('disconnect-btn').disabled = true;
+                document.getElementById('messages').innerHTML = '';
+                currentConversationId = null;
+            }
+        }
+        
+        function loadConversations() {
+            fetch(`${apiBase}/chat/conversations`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(conversations => {
+                const select = document.getElementById('conversation-select');
+                select.innerHTML = '<option value="">-- Select Conversation --</option>';
+                
+                conversations.forEach(conv => {
+                    const option = document.createElement('option');
+                    option.value = conv.id;
+                    option.textContent = conv.title;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error loading conversations:', error));
+        }
+        
+        function loadConversation() {
+            const conversationId = document.getElementById('conversation-select').value;
+            if (!conversationId) return;
+            
+            currentConversationId = conversationId;
+            
+            fetch(`${apiBase}/chat/conversations/${conversationId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(conversation => {
+                document.getElementById('messages').innerHTML = '';
+                
+                if (conversation.messages && conversation.messages.length > 0) {
+                    conversation.messages.forEach(msg => {
+                        displayMessage(msg, false); // Don't scroll for initial messages
+                    });
+                    // Scroll to bottom after loading all messages
+                    const messagesDiv = document.getElementById('messages');
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }
+            })
+            .catch(error => console.error('Error loading conversation:', error));
+        }
+        
+        function createConversation() {
+            const recipientId = document.getElementById('recipient-id').value.trim();
+            const productId = document.getElementById('product-id').value.trim();
+            const initialMessage = document.getElementById('initial-message').value.trim();
+            
+            if (!recipientId) {
+                alert("Please enter a recipient ID");
+                return;
+            }
+            
+            if (!initialMessage) {
+                alert("Please enter an initial message");
+                return;
+            }
+            
+            const payload = {
+                recipientId: recipientId,
+                initialMessage: initialMessage
+            };
+            
+            if (productId) {
+                payload.productId = productId;
+            }
+            
+            fetch(`${apiBase}/chat/conversations`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(conversation => {
+                alert(`Conversation created with ID: ${conversation.id}`);
+                loadConversations();
+            })
+            .catch(error => console.error('Error creating conversation:', error));
+        }
+        
+        function sendMessage() {
+            if (!currentConversationId) {
+                alert("Please select a conversation first");
+                return;
+            }
+            
+            const content = document.getElementById('message-input').value.trim();
+            if (!content) {
+                alert("Please enter a message");
+                return;
+            }
+            
+            const message = {
+                conversationId: currentConversationId,
+                content: content
+            };
+            
+            // Send using STOMP (WebSocket)
+            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(message));
+            
+            // Clear input
+            document.getElementById('message-input').value = '';
+            
+            // Create a temporary message for immediate display
+            const tempMsg = {
+                content: content,
+                timestamp: new Date(),
+                senderName: 'You (sending...)'
+            };
+            
+            displayMessage(tempMsg, true);
+        }
+        
+        function markAsRead() {
+            if (!currentConversationId) {
+                alert("Please select a conversation first");
+                return;
+            }
+            
+            const message = {
+                conversationId: currentConversationId
+            };
+            
+            stompClient.send("/app/chat.markRead", {}, JSON.stringify(message));
+        }
+        
+        function displayMessage(message, scroll = true) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            
+            // Determine if this is an outgoing or incoming message
+            // (This is a simplified check - in a real app you'd compare with the logged-in user's ID)
+            const isSentByMe = message.senderName && message.senderName.includes('You');
+            
+            messageDiv.className = `message ${isSentByMe ? 'sent' : 'received'}`;
+            
+            const time = message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+            
+            messageDiv.innerHTML = `
+                <strong>${message.senderName || 'Unknown'}</strong> (${time}):<br>
+                ${message.content}
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            
+            // Scroll to bottom if requested
+            if (scroll) {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>

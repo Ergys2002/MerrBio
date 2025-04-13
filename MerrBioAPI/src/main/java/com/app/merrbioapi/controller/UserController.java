@@ -37,7 +37,6 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User or associated data not found") // Handled by exception handler
     })
     @GetMapping("/me")
-    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<UserProfileResponse> getCurrentUserProfile(
             @AuthenticationPrincipal User user
     ) {

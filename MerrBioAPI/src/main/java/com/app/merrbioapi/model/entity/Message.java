@@ -14,6 +14,8 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDateTime;
+
 /**
  * Represents an individual message within a conversation
  */
@@ -42,4 +44,7 @@ public class Message extends BaseEntity {
 
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
+    
+    @Column(name = "last_notification_sent")
+    private LocalDateTime lastNotificationSent;
 }

@@ -42,8 +42,19 @@ public class SecurityConfig {
             "/error",
             "/api/v1/error", // Keep if prefix is used
             "/img/**",
-            "/products/advanced-search"
-
+            "/products/advanced-search",
+            
+            // WebSocket endpoints
+            "/ws/**",
+            "/api/v1/ws/**",
+            "/topic/**",
+            "/api/v1/topic/**",
+            "/queue/**",
+            "/api/v1/queue/**",
+            
+            // Chat documentation endpoints for Swagger
+            "/chat-socket-docs/**",
+            "/api/v1/chat-socket-docs/**"
     };
 
     // Define paths for specific HTTP methods if needed
@@ -54,7 +65,11 @@ public class SecurityConfig {
 
             // Add the farmers endpoint path here
             "/farmers",                // If no prefix is used
-            "/api/v1/farmers"          // If /api/v1 prefix is used
+            "/api/v1/farmers",         // If /api/v1 prefix is used
+            
+            // Add chat endpoints for documentation in Swagger
+            "/chat/**",                // If no prefix is used 
+            "/api/v1/chat/**"          // If /api/v1 prefix is used
 
             // Add other public GET endpoints like /products, /products/{id} etc. if needed
     };
