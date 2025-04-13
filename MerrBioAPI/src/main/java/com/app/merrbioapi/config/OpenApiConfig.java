@@ -47,7 +47,12 @@ public class OpenApiConfig {
                 "/products/**",   // Context path + /products/**
                 "/categories/**", // Context path + /categories/**
                 "/farmers/**",    // Context path + /farmers/**
-                "/users/**"
+                "/orders/**",
+                "/users/**",
+                "/orders/**",     // Order management endpoints
+                "/chat/**",       // Chat REST endpoints
+                "/chat-socket-docs/**", // WebSocket chat documentation endpoints
+                "/ws/**"          // WebSocket endpoints
         };
 
         return GroupedOpenApi.builder()

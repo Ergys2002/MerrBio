@@ -43,6 +43,7 @@ public class SecurityConfig {
             "/api/v1/error", // Keep if prefix is used
             "/img/**",
             "/products/advanced-search",
+            "/products",
             
             // WebSocket endpoints
             "/ws/**",
