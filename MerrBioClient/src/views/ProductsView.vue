@@ -6,7 +6,12 @@
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductStore } from '@/stores/productStore'
-import type { FilterOptions, SortOption } from '@/stores/productStore'
+import type { FilterOptions } from '@/stores/productStore'
+// Re-define SortOption locally as it's emitted by the child but not exported from store
+interface SortOption {
+  field: keyof import('@/stores/productStore').Product | ''; // Use Product type from store
+  direction: 'asc' | 'desc';
+}
 import ProductSearch from '@/components/products/ProductSearch.vue'
 import ProductList from '@/components/products/ProductList.vue'
 
@@ -17,7 +22,7 @@ const { t } = useI18n()
 const productStore = useProductStore()
 
 // Computed properties from store
-const loading = computed(() => productStore.loading)
+const loading = computed(() => productStore.isLoading) // Corrected property name
 const error = computed(() => productStore.error)
 const products = computed(() => productStore.paginatedProducts)
 const totalPages = computed(() => productStore.totalPages)
@@ -34,8 +39,19 @@ const handleFilterUpdate = (filters: FilterOptions) => {
   productStore.updateFilters(filters)
 }
 
+// Update handler to accept the SortOption object from the child
 const handleSortUpdate = (sort: SortOption) => {
-  productStore.updateSort(sort)
+  let sortValue: FilterOptions['sortBy'];
+
+  // Convert the object back to the string format needed by the store
+  if (!sort.field || sort.field === 'createdAt') {
+    sortValue = 'latest';
+  } else {
+    sortValue = `${sort.field}-${sort.direction}` as FilterOptions['sortBy'];
+  }
+  
+  // Update the store's filters with the converted value
+  productStore.updateFilters({ sortBy: sortValue });
 }
 
 // Generate page numbers for pagination
@@ -98,7 +114,6 @@ onMounted(() => {
       <!-- Page Header -->
       <div class="page-header">
         <h1>{{ t('products.title') }}</h1>
-        <p>{{ t('products.description') }}</p>
       </div>
 
       <!-- Main Content Grid -->
@@ -116,7 +131,7 @@ onMounted(() => {
           <!-- Results Summary -->
           <div v-if="!loading" class="results-summary">
             <p v-if="filteredProductsCount === 0">
-              {{ t('products.noResults') }}
+              Rezultatet:
             </p>
             <p v-else-if="filteredProductsCount === 1">
               {{ t('products.oneResult') }}

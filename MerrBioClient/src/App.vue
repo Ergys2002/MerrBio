@@ -3,14 +3,14 @@ import AppHeader from './components/common/AppHeader.vue'
 import AppFooter from './components/common/AppFooter.vue'
 import { onMounted } from 'vue';
 import { useAuthStore } from './stores/authStore';
-</script>
 
 const authStore = useAuthStore();
 
-onMounted(() => {
+onMounted(async () => {
   // Check authentication status when the app loads
-  authStore.checkAuth();
+  await authStore.checkAuth();
 });
+</script>
 
 
 <template>

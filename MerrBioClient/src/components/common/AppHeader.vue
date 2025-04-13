@@ -31,9 +31,9 @@ const { t } = useI18n();
 
 <style scoped>
 .app-header {
-  background-color: #ffffff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 16px 0;
+  background-color: #fdfdfd; /* Slightly off-white */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06); /* Softer shadow */
+  padding: 20px 0; /* Increased padding */
   position: sticky;
   top: 0;
   z-index: 100;
@@ -41,7 +41,7 @@ const { t } = useI18n();
 
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1280px; /* Slightly wider container */
   margin: 0 auto;
   padding: 0 20px;
 }
@@ -73,7 +73,7 @@ const { t } = useI18n();
 .header-right {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 32px; /* Increased gap for better separation */
 }
 
 .language-selector-placeholder {
@@ -97,14 +97,14 @@ const { t } = useI18n();
 }
 
 .logo-image {
-  height: 40px; /* Base height */
+  height: 45px; /* Slightly larger logo */
   width: auto; /* Maintain aspect ratio */
   max-width: 100%;
 }
 
 @media (max-width: 767px) {
   .logo-image {
-    height: 30px; /* Smaller on mobile */
+    height: 35px; /* Adjusted mobile logo size */
   }
 }
 </style>

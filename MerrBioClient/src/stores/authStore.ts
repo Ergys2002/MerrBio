@@ -3,14 +3,23 @@ import authService from '@/services/authService'; // Import the real service
 import apiClient from '@/services/api'; // Import apiClient to potentially fetch user data
 
 // Define the structure for user data fetched from the backend
-// Adjust this based on the actual user profile endpoint response
+// Matches the /users/me endpoint response
 export interface UserProfile {
-  id: number; // Or string, depending on your backend
+  id: string; // UUID string from backend - for farmers, this is also their farmer ID
   email: string;
   firstName: string;
   lastName: string;
-  role: 'FARMER' | 'CONSUMER' | 'ADMIN'; // Adjust roles as needed
-  // Add other relevant user fields
+  role: 'FARMER' | 'CONSUMER' | 'ADMIN';
+  // Farmer-specific fields
+  farmName?: string;
+  farmLocation?: string;
+  bio?: string;
+  isVerified?: boolean;
+  // Additional fields from backend
+  birthDate?: string;
+  phoneNumber?: string;
+  gender?: string;
+  address?: string; // Consumer address
 }
 
 export interface AuthState {

@@ -177,8 +177,33 @@
       "popular": "Popullor"
     },
     "viewButton": "Shiko Detajet",
-    "viewAllButton": "Shiko të Gjitha"
-  },
+    "viewAllButton": "Shiko të Gjitha",
+    "searchPlaceholder": "Kërko produkte...",
+    "addNew": "Shto Produkt të Ri",
+    "noProductsYet": "Nuk keni shtuar ende asnjë produkt.",
+    "addFirstProduct": "Shtoni produktin tuaj të parë"
+  },    "form": {
+      "name": "Emri *",
+      "description": "Përshkrimi",
+      "price": "Çmimi (€) *",
+      "unit": "Njësia",
+      "minQuantity": "Sasia Minimale *",
+      "maxQuantity": "Sasia Maksimale",
+      "minOrderQuantity": "Sasia Minimale e Porosisë",
+      "categories": "Kategoritë *",
+      "organic": "Organike",
+      "images": "Imazhet"
+    },
+    "management": "Menaxhimi i Produkteve",
+    "searchPlaceholder": "Kërko produkte...",
+    "addNew": "Shto Produkt të Ri",
+    "table": {
+      "product": "Produkti",
+      "price": "Çmimi",
+      "quantity": "Sasia",
+      "category": "Kategoria",
+      "actions": "Veprimet"
+    },
   "auth": {
     "welcome": "Mirë se vini në MerrBio",
     "joinCommunity": "Bëhuni pjesë e komunitetit tonë të fermerëve dhe konsumatorëve për produkte të freskëta vendase",

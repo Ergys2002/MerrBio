@@ -97,13 +97,13 @@ const logout = () => {
              <span class="nav-icon">🌱</span>
              <span class="nav-text">{{ t('dashboard.farmer.title') }}</span>
           </a>
-          <a v-else-if="userRole === 'CONSUMER'"
+          <a v-else-if="userRole === 'CUSTOMER'"
              href="/dashboard/consumer"
              @click.prevent="navigateTo('/dashboard/consumer')"
              class="nav-link"
-             :class="{ 'active': isActive('/dashboard/consumer') }">
+             :class="{ 'active': isActive('/profile') }">
              <span class="nav-icon">👤</span>
-             <span class="nav-text">{{ t('dashboard.consumer.title') }}</span>
+             <span class="nav-text">{{ t('nav.profile') }}</span>
           </a>
           <a v-else-if="userRole === 'ADMIN'"
              href="/dashboard/admin"
@@ -165,13 +165,13 @@ const logout = () => {
              <span class="nav-icon">🌱</span>
              <span class="nav-text">{{ t('dashboard.farmer.title') }}</span>
           </a>
-          <a v-else-if="userRole === 'CONSUMER'"
+          <a v-else-if="userRole === 'CUSTOMER'"
              href="/dashboard/consumer"
              @click.prevent="navigateTo('/dashboard/consumer')"
              class="nav-link"
-             :class="{ 'active': isActive('/dashboard/consumer') }">
+             :class="{ 'active': isActive('/profile') }">
              <span class="nav-icon">👤</span>
-             <span class="nav-text">{{ t('dashboard.consumer.title') }}</span>
+             <span class="nav-text">{{ t('nav.profile') }}</span>
           </a>
           <a v-else-if="userRole === 'ADMIN'"
              href="/dashboard/admin"

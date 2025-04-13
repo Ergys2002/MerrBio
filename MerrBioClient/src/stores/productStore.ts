@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { ProductService } from '@/services/productService'
 
 // Product categories available in the system
 export const productCategories = [
@@ -21,7 +22,7 @@ export interface Product {
   price: number
   unit: string
   minOrderQuantity: number
-  categories: string[]
+  categories: Array<{id: string, name: string, description: string}> // Updated to match backend
   imageUrls: string[]
   thumbnailUrl: string
   farmerId: string
@@ -29,7 +30,9 @@ export interface Product {
   farmLocation: string
   isOrganic: boolean
   isInStock: boolean
-  quantity: number
+  minAvailableQuantity: number // Added to match backend
+  maxAvailableQuantity: number // Added to match backend
+  minimumOrderQuantity: number // Added to match backend
   createdAt: string
   updatedAt: string
 }
@@ -43,79 +46,17 @@ export interface FilterOptions {
   sortBy: 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc' | 'latest'
 }
 
-// Mock data for development
-const mockProducts: Product[] = [
-  {
-    id: '550e8400-e29b-41d4-a716-446655440000',
-    name: 'Organic Fresh Tomatoes',
-    description: 'Locally grown organic tomatoes, perfect for salads and cooking. Our tomatoes are grown without pesticides and picked at peak ripeness.',
-    price: 3.99,
-    unit: 'kg',
-    minOrderQuantity: 2,
-    categories: ['Vegetables', 'Organic'],
-    imageUrls: [
-      'https://images.unsplash.com/photo-1592924357229-b2ab2fedcf04?ixlib=rb-4.0.2&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1546094324-7fd2718befe3?ixlib=rb-4.0.2&auto=format&fit=crop&q=80'
-    ],
-    thumbnailUrl: 'https://images.unsplash.com/photo-1592924357229-b2ab2fedcf04?ixlib=rb-4.0.2&auto=format&fit=crop&w=300&q=80',
-    farmerId: '7c0e5a5d-1234-4321-a123-123456789abc',
-    farmerName: 'Green Valley Farm',
-    farmLocation: 'Tirana, Albania',
-    isOrganic: true,
-    isInStock: true,
-    quantity: 100,
-    createdAt: '2025-04-01T10:00:00Z',
-    updatedAt: '2025-04-01T10:00:00Z'
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440001',
-    name: 'Farm Fresh Eggs',
-    description: 'Free-range eggs from happy chickens. Our hens are fed organic feed and have plenty of space to roam.',
-    price: 4.50,
-    unit: 'dozen',
-    minOrderQuantity: 1,
-    categories: ['Eggs', 'Organic'],
-    imageUrls: [
-      'https://images.unsplash.com/photo-1569127959161-2b1297b2d9a5?ixlib=rb-4.0.2&auto=format&fit=crop&q=80'
-    ],
-    thumbnailUrl: 'https://images.unsplash.com/photo-1569127959161-2b1297b2d9a5?ixlib=rb-4.0.2&auto=format&fit=crop&w=300&q=80',
-    farmerId: '7c0e5a5d-1234-4321-a123-123456789abd',
-    farmerName: 'Happy Hen Farm',
-    farmLocation: 'Durrës, Albania',
-    isOrganic: true,
-    isInStock: true,
-    quantity: 50,
-    createdAt: '2025-04-02T09:00:00Z',
-    updatedAt: '2025-04-02T09:00:00Z'
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440002',
-    name: 'Fresh Mountain Honey',
-    description: 'Pure, raw honey collected from mountain flowers. Unprocessed and naturally sweet.',
-    price: 12.99,
-    unit: 'jar',
-    minOrderQuantity: 1,
-    categories: ['Honey', 'Natural'],
-    imageUrls: [
-      'https://images.unsplash.com/photo-1587049352846-4a222e784d38?ixlib=rb-4.0.2&auto=format&fit=crop&q=80'
-    ],
-    thumbnailUrl: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?ixlib=rb-4.0.2&auto=format&fit=crop&w=300&q=80',
-    farmerId: '7c0e5a5d-1234-4321-a123-123456789abe',
-    farmerName: 'Mountain Bee Farm',
-    farmLocation: 'Vlorë, Albania',
-    isOrganic: true,
-    isInStock: false,
-    quantity: 0,
-    createdAt: '2025-04-03T11:00:00Z',
-    updatedAt: '2025-04-03T11:00:00Z'
-  }
+// Mock data for development and testing
+export const mockProducts: Product[] = [
+  // You can define some mock products here if needed
 ]
 
 export const useProductStore = defineStore('product', () => {
   // State
-  const products = ref<Product[]>([])
-  const loading = ref(false)
-  const error = ref<string | null>(null)
+  const products = ref<Product[]>([]);
+  const categories = ref<any[]>([]);
+  const isLoading = ref(false);
+  const error = ref<string | null>(null);
   const filters = ref<FilterOptions>({
     search: '',
     categories: [],
@@ -123,10 +64,10 @@ export const useProductStore = defineStore('product', () => {
     maxPrice: null,
     isOrganic: null,
     sortBy: 'latest'
-  })
-  const currentPage = ref(1)
-  const itemsPerPage = ref(12)
-
+  });
+  const currentPage = ref(1);
+  const itemsPerPage = ref(12);
+  
   // Getters
   const filteredProducts = computed(() => {
     let result = [...products.value]
@@ -144,7 +85,7 @@ export const useProductStore = defineStore('product', () => {
     // Apply category filter
     if (filters.value.categories.length > 0) {
       result = result.filter(product =>
-        product.categories.some(cat => filters.value.categories.includes(cat))
+        product.categories.some((cat) => filters.value.categories.includes(cat.name))
       )
     }
 
@@ -181,90 +122,255 @@ export const useProductStore = defineStore('product', () => {
     }
 
     return result
-  })
+  });
 
   const totalPages = computed(() => 
     Math.ceil(filteredProducts.value.length / itemsPerPage.value)
-  )
+  );
 
   const paginatedProducts = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage.value
     const end = start + itemsPerPage.value
     return filteredProducts.value.slice(start, end)
-  })
-
-  // Actions
-  const fetchProducts = async () => {
-    loading.value = true
-    error.value = null
+  });
+  /**
+   * Fetch products for the current farmer
+   */
+  async function fetchFarmerProducts(farmerId: string, token: string) {
+    isLoading.value = true;
+    error.value = null;
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      products.value = mockProducts
-    } catch (err) {
-      console.error('Error fetching products:', err)
-      error.value = 'Failed to load products'
+      const fetchedProducts = await ProductService.getFarmerProducts(farmerId, token);
+      // Ensure categories is always an array for each product
+      const normalizedProducts = fetchedProducts.map(product => ({
+        ...product,
+        categories: product.categories || [] // Ensure categories is never null/undefined
+      }));
+      products.value = normalizedProducts;
+    } catch (err: any) {
+      console.error('Failed to fetch products:', err);
+      error.value = err.message || 'Failed to fetch products';
+      products.value = [];
     } finally {
-      loading.value = false
+      isLoading.value = false;
+    }
+  }
+  
+  /**
+   * Fetch all products (for marketplace)
+   */
+  async function fetchProducts() {
+    isLoading.value = true;
+    error.value = null;
+    
+    try {
+      // For now use mock data, replace with API call when ready
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      products.value = mockProducts;
+    } catch (err: any) {
+      console.error('Error fetching products:', err);
+      error.value = 'Failed to load products';
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  const fetchProductById = async (id: string): Promise<Product | null> => {
-    loading.value = true
-    error.value = null
+  /**
+   * Fetch product by ID
+   */
+  async function fetchProductById(id: string): Promise<Product | null> {
+    isLoading.value = true;
+    error.value = null;
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const product = mockProducts.find(p => p.id === id)
-      return product || null
-    } catch (err) {
-      console.error('Error fetching product:', err)
-      error.value = 'Failed to load product details'
-      return null
+      // For now use mock data, replace with API call when ready
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const product = mockProducts.find(p => p.id === id);
+      return product || null;
+    } catch (err: any) {
+      console.error('Error fetching product:', err);
+      error.value = 'Failed to load product details';
+      return null;
     } finally {
-      loading.value = false
+      isLoading.value = false;
+    }
+  }
+  
+
+  /**
+   * Fetch all available product categories
+   */
+  async function fetchCategories(token: string) {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      // Assuming ProductService has a getCategories method
+      const fetchedCategories = await ProductService.getCategories(token); 
+      categories.value = fetchedCategories;
+    } catch (err: any) {
+      console.error('Failed to fetch categories:', err);
+      error.value = err.message || 'Failed to fetch categories';
+      categories.value = []; // Reset or keep old categories? Resetting for now.
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  const updateFilters = (newFilters: Partial<FilterOptions>) => {
-    filters.value = { ...filters.value, ...newFilters }
-    currentPage.value = 1 // Reset to first page when filters change
+  /**
+   * Create a new product
+   */
+  async function createProduct(productData: FormData, token: string): Promise<Product | null> {
+    isLoading.value = true;
+    error.value = null;
+    
+    try {
+      const newProduct = await ProductService.createProduct(productData, token);
+      products.value.push(newProduct);
+      return newProduct;
+    } catch (err: any) {
+      console.error('Failed to create product:', err);
+      error.value = err.message || 'Failed to create product';
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
   }
-
-  const setPage = (page: number) => {
-    currentPage.value = Math.max(1, Math.min(page, totalPages.value))
+  
+  /**
+   * Update an existing product
+   */
+  async function updateProduct(productId: string, productData: any, token: string): Promise<Product | null> {
+    isLoading.value = true;
+    error.value = null;
+    
+    try {
+      const updatedProduct = await ProductService.updateProduct(productId, productData, token);
+      
+      // Replace the old product with the updated one
+      const index = products.value.findIndex(p => p.id === productId);
+      if (index !== -1) {
+        products.value[index] = updatedProduct;
+      }
+      
+      return updatedProduct;
+    } catch (err: any) {
+      console.error('Failed to update product:', err);
+      error.value = err.message || 'Failed to update product';
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
   }
-
-  const nextPage = () => {
+  
+  /**
+   * Delete a product
+   */
+  async function deleteProduct(productId: string, token: string): Promise<boolean> {
+    isLoading.value = true;
+    error.value = null;
+    
+    try {
+      await ProductService.deleteProduct(productId, token);
+      
+      // Remove the deleted product from the local state
+      products.value = products.value.filter(p => p.id !== productId);
+      return true;
+    } catch (err: any) {
+      console.error('Failed to delete product:', err);
+      error.value = err.message || 'Failed to delete product';
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+  
+  /**
+   * Update filters and reset pagination
+   */
+  function updateFilters(newFilters: Partial<FilterOptions>) {
+    filters.value = { ...filters.value, ...newFilters };
+    currentPage.value = 1; // Reset to first page when filters change
+  }
+  
+  /**
+   * Set current page with validation
+   */
+  function setPage(page: number) {
+    currentPage.value = Math.max(1, Math.min(page, totalPages.value));
+  }
+  
+  /**
+   * Go to next page if possible
+   */
+  function nextPage() {
     if (currentPage.value < totalPages.value) {
-      currentPage.value++
+      currentPage.value++;
     }
   }
-
-  const prevPage = () => {
+  
+  /**
+   * Go to previous page if possible
+   */
+  function prevPage() {
     if (currentPage.value > 1) {
-      currentPage.value--
+      currentPage.value--;
     }
   }
-
+  
+  /**
+   * Clear all product-related errors
+   */
+  function clearErrors() {
+    error.value = null;
+  }
+  
+  /**
+   * Reset the product store to its initial state
+   */
+  function $reset() {
+    products.value = [];
+    isLoading.value = false;
+    error.value = null;
+    filters.value = {
+      search: '',
+      categories: [],
+      minPrice: null,
+      maxPrice: null,
+      isOrganic: null,
+      sortBy: 'latest'
+    };
+    currentPage.value = 1;
+  }
+  
   return {
     // State
     products,
-    loading,
+    categories,
+    isLoading,
     error,
     filters,
     currentPage,
     itemsPerPage,
+    
     // Getters
     filteredProducts,
     totalPages,
     paginatedProducts,
+    
     // Actions
+    fetchFarmerProducts,
     fetchProducts,
     fetchProductById,
+    fetchCategories,
+    createProduct,
+    updateProduct,
+    deleteProduct,
     updateFilters,
     setPage,
     nextPage,
-    prevPage
-  }
-})
+    prevPage,
+    clearErrors,
+    $reset
+  };
+});

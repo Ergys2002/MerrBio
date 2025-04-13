@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
+import axios from 'axios';
 import '../assets/organic-patterns.css';
+import { ProductService } from '@/services/productService';
 
 const { t } = useI18n();
 
@@ -15,7 +17,14 @@ const staggerElements = ref([]);
 const backToTopButton = ref(null);
 const heroContentRef = ref(null); // Added for hero animation
 
-// Removed testimonials for the carousel
+// State for products and categories
+const featuredProducts = ref([]);
+const categories = ref([
+  { id: 'all', name: t('products.categories.all') }
+]);
+const activeCategory = ref('all');
+const isLoading = ref(true);
+const error = ref(null);
 
 // Recently added products ticker
 const recentlyAdded = [
@@ -25,16 +34,6 @@ const recentlyAdded = [
   t('home.recentlyAdded.fourth')
 ];
 
-// Product categories for filtering tabs
-const categories = [
-  { id: 'all', name: t('products.categories.all') },
-  { id: 'vegetables', name: t('products.categories.vegetables') },
-  { id: 'fruits', name: t('products.categories.fruits') },
-  { id: 'dairy', name: t('products.categories.dairy') },
-  { id: 'eggs', name: t('products.categories.eggs') }
-];
-const activeCategory = ref('all');
-
 // Statistics for the farmer CTA section
 const stats = [
   { figure: '500+', label: t('home.stats.farmers') },
@@ -42,73 +41,12 @@ const stats = [
   { figure: '10,000+', label: t('home.stats.customers') }
 ];
 
-// Placeholder data for featured products - this will be replaced with real data from the API later
-const featuredProducts = [
-  {
-    id: 1,
-    name: t('home.featuredProducts.tomatoes.name'),
-    description: t('home.featuredProducts.tomatoes.description'),
-    image: 'https://images.unsplash.com/photo-1592924357229-b2ab2fedcf04?ixlib=rb-4.0.2&auto=format&fit=crop&q=80',
-    price: 3.99,
-    unit: t('products.units.kg'),
-    farmer: t('home.featuredProducts.tomatoes.farmer'),
-    farmerAvatar: 'https://randomuser.me/api/portraits/women/65.jpg',
-    category: 'vegetables',
-    isNew: true
-  },
-  {
-    id: 2,
-    name: t('home.featuredProducts.eggs.name'),
-    description: t('home.featuredProducts.eggs.description'),
-    image: 'https://images.unsplash.com/photo-1569127959161-2b1297b2d9a5?ixlib=rb-4.0.2&auto=format&fit=crop&q=80',
-    price: 4.50,
-    unit: t('products.units.dozen'),
-    farmer: t('home.featuredProducts.eggs.farmer'),
-    farmerAvatar: 'https://randomuser.me/api/portraits/men/67.jpg',
-    category: 'eggs',
-    isPopular: true
-  },
-  {
-    id: 3,
-    name: t('home.featuredProducts.lettuce.name'),
-    description: t('home.featuredProducts.lettuce.description'),
-    image: 'https://images.unsplash.com/photo-1622205313162-be1d5712a43f?ixlib=rb-4.0.2&auto=format&fit=crop&q=80',
-    price: 2.25,
-    unit: t('products.units.head'),
-    farmer: t('home.featuredProducts.lettuce.farmer'),
-    farmerAvatar: 'https://randomuser.me/api/portraits/women/58.jpg',
-    category: 'vegetables'
-  },
-  {
-    id: 4,
-    name: t('home.featuredProducts.apples.name'),
-    description: t('home.featuredProducts.apples.description'),
-    image: 'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?ixlib=rb-4.0.2&auto=format&fit=crop&q=80',
-    price: 2.99,
-    unit: t('products.units.kg'),
-    farmer: t('home.featuredProducts.apples.farmer'),
-    farmerAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    category: 'fruits',
-    isPopular: true
-  },
-  {
-    id: 5,
-    name: t('home.featuredProducts.cheese.name'),
-    description: t('home.featuredProducts.cheese.description'),
-    image: 'https://images.unsplash.com/photo-1552767059-ce182ead6c1b?ixlib=rb-4.0.2&auto=format&fit=crop&q=80',
-    price: 5.75,
-    unit: t('products.units.piece'),
-    farmer: t('home.featuredProducts.cheese.farmer'),
-    farmerAvatar: 'https://randomuser.me/api/portraits/women/76.jpg',
-    category: 'dairy',
-    isNew: true
-  }
-];
-
 // Filter products by category
 const filteredProducts = computed(() => {
-  if (activeCategory.value === 'all') return featuredProducts;
-  return featuredProducts.filter(product => product.category === activeCategory.value);
+  if (activeCategory.value === 'all') return featuredProducts.value;
+  return featuredProducts.value.filter(product => {
+    return product.categories.some(category => category.id === activeCategory.value);
+  });
 });
 
 // Scroll handling for animations and parallax effect
@@ -168,6 +106,62 @@ onMounted(() => {
   if (heroContentRef.value) {
     heroContentRef.value.classList.add('animate-in');
   }
+  // Fetch products and categories from API
+  const fetchData = async () => {
+    isLoading.value = true;
+    try {
+      // Fetch categories first
+      const categoryResponse = await axios.get('/api/categories');
+      console.log('Categories response:', categoryResponse);
+      
+      // Check if categories data is valid and has content
+      if (categoryResponse.data && Array.isArray(categoryResponse.data)) {
+        // Create categories array with 'all' option first
+        categories.value = [
+          { id: 'all', name: t('products.categories.all') },
+          ...categoryResponse.data.map(category => ({
+            id: category.id,
+            name: category.name
+          }))
+        ];
+      } else {
+        console.error('Invalid categories data format:', categoryResponse.data);
+        // Keep default 'all' category if response is invalid
+        categories.value = [{ id: 'all', name: t('products.categories.all') }];      }      // Fetch latest products using simplified payload
+      const productResponse = await ProductService.advancedSearch({ size: 6 });
+      
+      console.log('Products response:', productResponse);
+      
+      // Now correctly handle the response format with content array
+      if (productResponse && productResponse.content && Array.isArray(productResponse.content)) {
+        featuredProducts.value = productResponse.content.map(product => ({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        image: product.thumbnailUrl || 'https://placehold.co/600x400?text=No+Image',
+        price: product.price,
+        unit: product.unit ? product.unit.toLowerCase() : 'unit',
+        farmer: product.farmerName || 'Unknown Farmer',
+        farmerAvatar: 'https://randomuser.me/api/portraits/men/' + Math.floor(Math.random() * 100) + '.jpg',
+        categories: Array.isArray(product.categories) ? product.categories : [],
+        isOrganic: Boolean(product.isOrganic),
+        isInStock: Boolean(product.isInStock),
+        isNew: product.createdAt ? new Date(product.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) : false, // Created in last 7 days
+        isPopular: Math.random() > 0.7 // Random for demo purposes
+      }));
+      } else {
+        console.error('Invalid products data format or empty content array:', productResponse.data);
+        featuredProducts.value = []; // Set empty array if no valid products
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      error.value = 'Failed to fetch data';
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  fetchData();
 });
 
 // Clean up event listeners
@@ -252,18 +246,28 @@ onUnmounted(() => {
         </div>
         
         <!-- Desktop Product Grid -->
-        <div class="products-grid desktop-grid">
+        <div v-if="isLoading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading products...</p>
+        </div>
+        <div v-else-if="error" class="error-state">
+          <p>{{ error }}</p>
+          <button @click="fetchData" class="retry-button">Try Again</button>
+        </div>
+        <div v-else class="products-grid desktop-grid">
           <div v-for="product in filteredProducts" :key="product.id" class="product-card hover-grow">
             <div class="product-image">
               <img :src="product.image" :alt="product.name" />
               <!-- Product Badges -->
               <div class="product-badges">
                 <span v-if="product.isNew" class="badge badge-new">{{ t('products.badges.new') }}</span>
+                <span v-if="product.isOrganic" class="badge badge-organic">Produkt Organik</span>
                 <span v-if="product.isPopular" class="badge badge-popular">{{ t('products.badges.popular') }}</span>
+                <span v-if="!product.isInStock" class="badge badge-out-of-stock">{{ t('products.badges.outOfStock') }}</span>
               </div>
               <!-- Category Badge -->
-              <div class="category-badge">
-                {{ categories.find(c => c.id === product.category)?.name }}
+              <div class="category-badge" v-if="product.categories.length > 0">
+                {{ product.categories[0].name }}
               </div>
             </div>
             <div class="product-info">
@@ -275,7 +279,7 @@ onUnmounted(() => {
               </div>
               <p class="description">{{ product.description }}</p>
               <div class="product-footer">
-                <span class="price">${{ product.price }} / {{ product.unit }}</span>
+                <span class="price">€{{ product.price.toFixed(2) }} / {{ product.unit }}</span>
                 <router-link :to="`/products/${product.id}`" class="view-button btn-modern">
                   {{ t('products.viewButton') }}
                 </router-link>
@@ -287,14 +291,23 @@ onUnmounted(() => {
         <!-- Mobile Horizontal Scrolling Product List -->
         <div class="products-scroll-container">
           <div class="scroll-indicator left">‹</div>
-          <div class="products-scroll">
+          <div v-if="isLoading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading products...</p>
+          </div>
+          <div v-else-if="error" class="error-state">
+            <p>{{ error }}</p>
+            <button @click="fetchData" class="retry-button">Try Again</button>
+          </div>
+          <div v-else class="products-scroll">
             <div v-for="product in filteredProducts" :key="product.id" class="product-card hover-grow">
               <div class="product-image">
                 <img :src="product.image" :alt="product.name" />
                 <!-- Product Badges -->
                 <div class="product-badges">
                   <span v-if="product.isNew" class="badge badge-new">{{ t('products.badges.new') }}</span>
-                  <span v-if="product.isPopular" class="badge badge-popular">{{ t('products.badges.popular') }}</span>
+                  <span v-if="product.isOrganic" class="badge badge-organic">{{ t('products.badges.organic') }}</span>
+                  <span v-if="!product.isInStock" class="badge badge-out-of-stock">{{ t('products.badges.outOfStock') }}</span>
                 </div>
               </div>
               <div class="product-info">
@@ -305,7 +318,7 @@ onUnmounted(() => {
                   <span class="farmer-name">{{ product.farmer }}</span>
                 </div>
                 <div class="product-footer">
-                  <span class="price">${{ product.price }} / {{ product.unit }}</span>
+                  <span class="price">€{{ product.price.toFixed(2) }} / {{ product.unit }}</span>
                 </div>
               </div>
             </div>
@@ -1190,5 +1203,53 @@ h1, h2, h3, h4, h5, h6, button, .cta-button {
   .hero-shape-divider svg {
     height: 50px; /* Adjust divider height for mobile */
   }
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  color: #666;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(76, 175, 80, 0.1);
+  border-radius: 50%;
+  border-top-color: #4caf50;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 60px 0;
+  color: #f44336;
+}
+
+.retry-button {
+  margin-top: 16px;
+  padding: 8px 24px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.retry-button:hover {
+  background-color: #d32f2f;
 }
 </style>

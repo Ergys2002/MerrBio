@@ -12,7 +12,8 @@
     "dashboard": "Dashboard",
     "login": "Login",
     "register": "Register",
-    "logout": "Logout"
+    "logout": "Logout",
+    "profile": "Profile"
   },  "home": {
     "hero": {
       "title": "Fresh from Farm to Your Table",
@@ -126,6 +127,31 @@
     "description": "Description",
     "multipleResults": "products found"
   },
+    "form": {
+      "name": "Name",
+      "description": "Description",
+      "price": "Price",
+      "unit": "Unit",
+      "minQuantity": "Minimum Quantity",
+      "maxQuantity": "Maximum Quantity",
+      "minOrderQuantity": "Minimum Order Quantity",
+      "categories": "Categories",
+      "organic": "Organic",
+      "images": "Images"
+    },
+    "management": "Product Management",
+    "searchPlaceholder": "Search products...",
+    "addNew": "Add New Product",
+    "noProductsYet": "You haven't added any products yet.",
+    "addFirstProduct": "Add your first product",
+    "noResults": "No results found",
+    "table": {
+      "product": "Product",
+      "price": "Price",
+      "quantity": "Quantity",
+      "category": "Category",
+      "actions": "Actions"
+    },
   "auth": {
     "welcome": "Welcome to MerrBio",
     "joinCommunity": "Join our community of farmers and consumers for fresh, local products",
